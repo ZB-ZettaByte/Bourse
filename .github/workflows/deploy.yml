@@ -29,7 +29,7 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: "true"
-          NEXT_PUBLIC_BASE_PATH: /bourse
+          NEXT_PUBLIC_BASE_PATH: /Bourse
           NEXT_PUBLIC_FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
 
       - name: Deploy to GitHub Pages
