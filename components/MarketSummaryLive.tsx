@@ -6,7 +6,6 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  ChevronRight,
   LineChart,
   Loader2,
   Star,
@@ -437,7 +436,7 @@ function MiniChart({ points, isUp }: { points: number[]; isUp: boolean }) {
 
 function LoadingState() {
   return (
-    <section id="live-stats" className="border-t border-black/10 bg-white px-5 pb-12 pt-14 text-black md:px-8 md:pb-14 md:pt-16">
+    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 pb-12 pt-14 text-green-900 md:px-8 md:pb-14 md:pt-16">
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 flex items-center gap-3">
           <Loader2 className="size-5 animate-spin text-teal-700" />
@@ -462,7 +461,7 @@ function LoadingState() {
 
 function StateCard({ title, message, action }: { title: string; message: string; action?: string }) {
   return (
-    <section id="live-stats" className="border-t border-black/10 bg-white px-5 py-16 text-black md:px-8 md:py-20">
+    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20">
       <div className="mx-auto max-w-7xl rounded-lg border border-black/10 bg-white p-10 text-center shadow-sm">
         <BarChart3 className="mx-auto size-10 text-black/35" />
         <h2 className="mt-4 text-2xl font-semibold">{title}</h2>
@@ -604,7 +603,7 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState<RangeOption>("1D");
-  const [selectedSymbol] = useState("SPY");
+  const [selectedSymbol, setSelectedSymbol] = useState("SPY");
   const [liveSamples, setLiveSamples] = useState<ChartSeriesPoint[]>([]);
 
   useEffect(() => {
@@ -722,17 +721,18 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
   const activeSymbol = data.selectedSymbol ?? displaySummary?.symbol ?? selectedSymbol;
 
   function handleSelectStock(stock: MarketStock) {
+    setSelectedSymbol(stock.symbol);
+    setLiveSamples([]);
     onSelectCompany?.(stock);
   }
 
   return (
-    <section id="live-stats" className="border-t border-black/10 bg-white px-5 py-16 text-black md:px-8 md:py-20">
+    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20">
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 flex flex-col justify-between gap-3 md:flex-row md:items-end">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-semibold tracking-normal md:text-3xl">Market summary</h2>
-              <ChevronRight className="size-5" />
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/50">
               Live stock quotes from the backend, ranked into market movers and a watchlist-style preview.
@@ -829,7 +829,6 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
             </div>
             <Link href="#features" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-600">
               Build your own watchlist
-              <ChevronRight className="size-3" />
             </Link>
           </article>
         </div>

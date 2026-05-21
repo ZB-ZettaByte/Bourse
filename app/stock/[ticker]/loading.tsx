@@ -2,7 +2,7 @@ import LandingHeader from "@/components/LandingHeader";
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-green-900 text-white">
       <LandingHeader />
       <main className="mx-auto max-w-7xl px-6 py-28">
         <div className="h-10 w-56 animate-pulse rounded-lg bg-white/10" />

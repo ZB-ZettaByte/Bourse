@@ -9,6 +9,20 @@ type ChatMessage = {
   content: string;
 };
 
+type ChatPayload = {
+  reply?: string;
+  error?: string;
+  detail?: string;
+  type?: "comparison";
+  text?: string;
+  stocks?: Array<{
+    ticker: string;
+    price: number;
+    change: number;
+    candles: number[];
+  }>;
+};
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { message?: string; history?: ChatMessage[] };
@@ -27,7 +41,7 @@ export async function POST(request: Request) {
         history: Array.isArray(body.history) ? body.history.slice(-6) : [],
       }),
     });
-    const payload = (await response.json()) as { reply?: string; error?: string; detail?: string };
+    const payload = (await response.json()) as ChatPayload;
 
     return NextResponse.json(
       {

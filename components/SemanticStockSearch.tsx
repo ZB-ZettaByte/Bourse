@@ -77,7 +77,7 @@ export default function SemanticStockSearch({ className = "" }: { className?: st
   }
 
   return (
-    <div className={`relative w-full transition-all duration-300 focus-within:lg:max-w-[680px] ${className}`}>
+    <div className={`relative w-full transition-all duration-300 ${className}`}>
       <div className="flex h-11 items-center gap-3 rounded-full border border-green-500/30 bg-white/5 px-4 text-white/80 transition-colors focus-within:border-green-500/60 focus-within:bg-white/10">
         <Search className="size-4 shrink-0 text-teal-300" />
         <input

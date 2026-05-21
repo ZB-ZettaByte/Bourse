@@ -1,12 +1,31 @@
 "use client";
 
-import { MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { Line, LineChart as RechartsLineChart, ResponsiveContainer, Tooltip } from "recharts";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   isTyping?: boolean;
+  type?: "comparison";
+  text?: string;
+  stocks?: ComparisonStock[];
+};
+
+type ComparisonStock = {
+  ticker: string;
+  price: number;
+  change: number;
+  candles: number[];
+};
+
+type ChatPayload = {
+  reply?: string;
+  error?: string;
+  type?: "comparison";
+  text?: string;
+  stocks?: ComparisonStock[];
 };
 
 const starterMessages = [
@@ -14,6 +33,8 @@ const starterMessages = [
   "Explain P/E ratio simply",
   "Is NVDA a good buy right now?",
 ];
+const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const bourseIconSrc = `${publicBasePath}/bourse-icon.svg`;
 
 export default function FloatingAIChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,9 +62,23 @@ export default function FloatingAIChat() {
           history: messages.slice(-6),
         }),
       });
-      const payload = (await response.json()) as { reply?: string; error?: string };
-      const reply = payload.reply?.trim() || payload.error || "Bourse AI is unavailable right now.";
-      setMessages([...nextMessages, { role: "assistant", content: reply, isTyping: true }]);
+      const payload = (await response.json()) as ChatPayload;
+      if (payload.type === "comparison" && payload.text && Array.isArray(payload.stocks)) {
+        setMessages([
+          ...nextMessages,
+          {
+            role: "assistant",
+            content: payload.text,
+            text: payload.text,
+            type: "comparison",
+            stocks: payload.stocks,
+            isTyping: false,
+          },
+        ]);
+      } else {
+        const reply = payload.reply?.trim() || payload.error || "Bourse AI is unavailable right now.";
+        setMessages([...nextMessages, { role: "assistant", content: reply, isTyping: true }]);
+      }
     } catch {
       setMessages([...nextMessages, { role: "assistant", content: "Bourse AI is unavailable right now.", isTyping: true }]);
     } finally {
@@ -65,7 +100,7 @@ export default function FloatingAIChat() {
         aria-label="Open Bourse AI chat"
         className="fixed bottom-6 right-6 z-50 grid size-14 place-items-center rounded-full bg-[#22c55e] text-black shadow-2xl shadow-black/35 transition hover:scale-105 hover:bg-[#2ee66f] focus:outline-none focus:ring-2 focus:ring-[#22c55e]/60 focus:ring-offset-2 focus:ring-offset-black"
       >
-        <Sparkles className="size-6" />
+        <img src={bourseIconSrc} alt="Bourse AI" className="size-9 rounded-full" />
       </button>
 
       <section
@@ -77,8 +112,8 @@ export default function FloatingAIChat() {
       >
         <header className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-[#22c55e] text-black">
-              <Sparkles className="size-5" />
+            <span className="grid size-10 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/35">
+              <img src={bourseIconSrc} alt="Bourse AI" className="size-9 rounded-full" />
             </span>
             <div>
               <h2 className="text-sm font-bold leading-none">Bourse AI</h2>
@@ -104,8 +139,8 @@ export default function FloatingAIChat() {
               <div className="flex items-start gap-3">
                 <AIAvatar />
                 <p className="max-w-[82%] rounded-[4px_18px_18px_18px] border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3 text-sm leading-6 text-white/75">
-                  <span className="mb-2 grid size-6 place-items-center rounded-full bg-[#22c55e] text-black">
-                    <Sparkles className="size-3.5" />
+                  <span className="mb-2 grid size-6 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/30">
+                    <img src={bourseIconSrc} alt="Bourse AI" className="size-5 rounded-full" />
                   </span>
                   Hi, I&apos;m Bourse AI. Ask me about markets, metrics, or stock trends.
                 </p>
@@ -131,30 +166,16 @@ export default function FloatingAIChat() {
                   className={`flex items-start gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   {message.role === "assistant" && <AIAvatar />}
-                  <p
-                    className={`max-w-[82%] whitespace-pre-wrap px-4 py-3 text-sm leading-6 ${
-                      message.role === "user"
-                        ? "rounded-[18px_18px_4px_18px] bg-[#22c55e] font-bold text-white"
-                        : "rounded-[4px_18px_18px_18px] border border-[#2a2a2a] bg-[#1a1a1a] text-white/75"
-                    }`}
-                  >
-                    {message.role === "assistant" && (
-                      <span className="mb-2 grid size-6 place-items-center rounded-full bg-[#22c55e] text-black">
-                        <Sparkles className="size-3.5" />
-                      </span>
-                    )}
-                    <FormattedMessage
-                      content={message.content}
-                      animate={message.role === "assistant" && message.isTyping}
-                      onDone={() => {
-                        setMessages((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, isTyping: false } : item
-                          )
-                        );
-                      }}
-                    />
-                  </p>
+                  <ChatBubble
+                    message={message}
+                    onDone={() => {
+                      setMessages((current) =>
+                        current.map((item, itemIndex) =>
+                          itemIndex === index ? { ...item, isTyping: false } : item
+                        )
+                      );
+                    }}
+                  />
                 </div>
               ))}
               {isSending && (
@@ -195,9 +216,77 @@ export default function FloatingAIChat() {
 
 function AIAvatar() {
   return (
-    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-white">
-      <MessageCircle className="size-4" />
+    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/35">
+      <img src={bourseIconSrc} alt="Bourse AI" className="size-7 rounded-full" />
     </span>
+  );
+}
+
+function ChatBubble({ message, onDone }: { message: ChatMessage; onDone: () => void }) {
+  if (message.role === "user") {
+    return (
+      <div className="max-w-[82%] whitespace-pre-wrap rounded-[18px_18px_4px_18px] bg-[#22c55e] px-4 py-3 text-sm font-bold leading-6 text-white">
+        <FormattedMessage content={message.content} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[82%] whitespace-pre-wrap rounded-[4px_18px_18px_18px] border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3 text-sm leading-6 text-white/75">
+      <span className="mb-2 grid size-6 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/30">
+        <img src={bourseIconSrc} alt="Bourse AI" className="size-5 rounded-full" />
+      </span>
+      {message.type === "comparison" && message.stocks?.length === 2 ? (
+        <ComparisonMessage text={message.text ?? message.content} stocks={message.stocks} />
+      ) : (
+        <FormattedMessage content={message.content} animate={message.isTyping} onDone={onDone} />
+      )}
+    </div>
+  );
+}
+
+function ComparisonMessage({ text, stocks }: { text: string; stocks: ComparisonStock[] }) {
+  const [left, right] = stocks;
+  const chartData = left.candles.map((value, index) => ({
+    i: index,
+    [left.ticker]: value,
+    [right.ticker]: right.candles[index] ?? null,
+  }));
+
+  return (
+    <div className="space-y-3">
+      <p>{text}</p>
+      <p className="text-xs font-bold text-white/40">
+        {left.ticker} vs {right.ticker} — Today
+      </p>
+      <div className="h-40 w-full rounded-lg border border-white/10 bg-black/25 p-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsLineChart data={chartData}>
+            <Tooltip
+              contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff" }}
+              labelStyle={{ color: "rgba(255,255,255,0.55)" }}
+            />
+            <Line type="monotone" dataKey={left.ticker} stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey={right.ticker} stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
+          </RechartsLineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex gap-3">
+        {stocks.map((stock) => {
+          const isUp = stock.change >= 0;
+          return (
+            <div key={stock.ticker} className="w-1/2 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+              <p className="text-xs font-bold text-white/45">{stock.ticker}</p>
+              <p className="mt-1 text-base font-bold text-white">${stock.price.toFixed(2)}</p>
+              <p className={`mt-1 text-xs font-bold ${isUp ? "text-green-400" : "text-red-400"}`}>
+                {isUp ? "+" : ""}
+                {stock.change.toFixed(2)}% {isUp ? "▲" : "▼"}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bourse",
   description: "Track real-time stock prices, get personalized alerts and explore detailed company insights.",
+  icons: {
+    icon: "/assets/icons/bourse-icon.svg",
+    shortcut: "/assets/icons/bourse-icon.svg",
+    apple: "/assets/icons/bourse-icon.svg",
+  },
 };
 
 export default function RootLayout({

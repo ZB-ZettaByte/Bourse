@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 const FINNHUB_BASE_URL = process.env.FINNHUB_BASE_URL ?? "https://finnhub.io/api/v1";
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? "";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
-const QUOTE_CACHE_TTL_MS = 60_000;
+const QUOTE_CACHE_TTL_MS = 30_000;
 const STALE_QUOTE_TTL_MS = 10 * 60_000;
 
 export const dynamic = "force-dynamic";
@@ -72,6 +72,7 @@ type MarketStock = {
   open?: number;
   high?: number;
   low?: number;
+  updatedAt?: number;
   chartPoints: number[];
 };
 
@@ -351,11 +352,11 @@ async function getYahooChart(symbol: string, range: RangeOption): Promise<ChartD
   }
 }
 
-async function getStock(symbol: string): Promise<StockFetchResult> {
+async function getStock(symbol: string, forceFresh = false): Promise<StockFetchResult> {
   const cached = stockQuoteCache[symbol];
   const now = Date.now();
 
-  if (cached && now - cached.fetchedAt < QUOTE_CACHE_TTL_MS) {
+  if (!forceFresh && cached && now - cached.fetchedAt < QUOTE_CACHE_TTL_MS) {
     return { stock: cached.stock };
   }
 
@@ -387,6 +388,7 @@ async function getStock(symbol: string): Promise<StockFetchResult> {
         open: finitePositive(quote.o),
         high: finitePositive(quote.h),
         low: finitePositive(quote.l),
+        updatedAt: Number.isFinite(Number(quote.t)) ? Number(quote.t) : undefined,
         chartPoints: buildQuoteChartPoints(quote),
       };
 
@@ -417,8 +419,9 @@ export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
   const selectedRange = parseRange(searchParams.get("range"));
   const selectedSymbol = parseSymbol(searchParams.get("symbol"));
+  const forceLiveQuote = searchParams.get("live") === "1" || searchParams.get("refresh") === "1";
   const symbols = Array.from(new Set([selectedSymbol, ...LANDING_SYMBOLS, ...MARKET_PROXIES.map((item) => item.symbol)]));
-  const results = await Promise.all(symbols.map(getStock));
+  const results = await Promise.all(symbols.map((symbol) => getStock(symbol, forceLiveQuote && symbol === selectedSymbol)));
   const stocks = results.map((result) => result.stock).filter((stock): stock is MarketStock => Boolean(stock));
   const failedStatuses = results.map((result) => result.errorStatus).filter((status): status is number => Number.isFinite(status));
 
@@ -458,10 +461,6 @@ export async function GET(request: Request) {
   const topLosers = [...equities].filter((stock) => stock.changePercent < 0).sort((a, b) => a.changePercent - b.changePercent).slice(0, 5);
   const trendingStocks = [...equities].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent)).slice(0, 6);
   const watchlistPreview = equities.slice(0, 4);
-  if (marketSummary) {
-    rememberQuote(marketSummary.symbol, marketSummary.price);
-  }
-
   const candleSeries = marketSummary ? await getCandles(marketSummary.symbol, selectedRange) : [];
   const yahooChart = marketSummary && candleSeries.length < 2 ? await getYahooChart(marketSummary.symbol, selectedRange) : { points: [] };
   const liveHistorySeries = marketSummary ? getLiveHistory(marketSummary.symbol, selectedRange) : [];
@@ -474,7 +473,20 @@ export async function GET(request: Request) {
         : liveHistorySeries.length >= 2
           ? liveHistorySeries
           : quoteSeries;
-  const chartPoints = chartSeries.map((point) => point.price);
+  const synchronizedChartSeries =
+    selectedRange === "1D" &&
+    marketSummary?.price &&
+    chartSeries.length >= 2 &&
+    chartSeries[chartSeries.length - 1]?.price !== marketSummary.price
+      ? [
+          ...chartSeries,
+          {
+            price: marketSummary.price,
+            time: Math.max(marketSummary.updatedAt ?? 0, (chartSeries[chartSeries.length - 1]?.time ?? 0) + 1, Math.floor(Date.now() / 1000)),
+          },
+        ]
+      : chartSeries;
+  const chartPoints = synchronizedChartSeries.map((point) => point.price);
   const chartSource: ChartSource =
     candleSeries.length >= 2
       ? "candles"
@@ -486,19 +498,23 @@ export async function GET(request: Request) {
             ? "quote-session"
             : "unavailable";
   const chartPreviousClose = yahooChart.previousClose ?? marketSummary?.previousClose;
+  const displayMarketSummary = marketSummary ? { ...marketSummary, chartPoints: chartPoints.length >= 2 ? chartPoints : marketSummary.chartPoints } : marketSummary;
+  if (displayMarketSummary) {
+    rememberQuote(displayMarketSummary.symbol, displayMarketSummary.price);
+  }
 
   return NextResponse.json({
     updatedAt: new Date().toISOString(),
     range: selectedRange,
-    selectedSymbol: marketSummary?.symbol ?? selectedSymbol,
-    marketSummary,
+    selectedSymbol: displayMarketSummary?.symbol ?? selectedSymbol,
+    marketSummary: displayMarketSummary,
     majorIndices,
     topGainers,
     topLosers,
     trendingStocks,
     watchlistPreview,
     chartPoints,
-    chartSeries,
+    chartSeries: synchronizedChartSeries,
     chartPreviousClose,
     chartSource,
   });

@@ -2,8 +2,10 @@ import os
 import re
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, time
 from typing import Any
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import faiss
 import httpx
@@ -36,6 +38,10 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 CHAT_MARKET_SYMBOLS = ["AAPL", "TSLA", "NVDA", "AMD", "AMZN", "MSFT", "GOOGL", "SPY", "QQQ", "DIA", "IWM"]
+COMPARE_PATTERN = re.compile(
+    r"\b(?:compare|vs\.?|versus|which is better)\b.*?\b([A-Z]{1,5})\b.*?\b([A-Z]{1,5})\b",
+    re.IGNORECASE,
+)
 CHAT_STOCK_INTENT_WORDS = {
     "stock",
     "stocks",
@@ -196,9 +202,26 @@ def clean_stock_query(value: str) -> str:
 
 
 def extract_comparison_queries(message: str) -> tuple[str, str] | None:
+    if re.search(r"\b(?:compare|vs\.?|versus|which is better)\b", message, flags=re.IGNORECASE):
+        uppercase_symbols = [
+            clean_symbol(token)
+            for token in re.findall(r"(?<![A-Za-z])\$?([A-Z]{1,5})(?![A-Za-z])", message)
+            if clean_symbol(token) not in CHAT_TICKER_SKIP_WORDS
+        ]
+        if len(uppercase_symbols) >= 2 and uppercase_symbols[0] != uppercase_symbols[1]:
+            return uppercase_symbols[0], uppercase_symbols[1]
+
+    ticker_match = COMPARE_PATTERN.search(message)
+    if ticker_match:
+        left = clean_symbol(ticker_match.group(1))
+        right = clean_symbol(ticker_match.group(2))
+        if left and right and left != right:
+            return left, right
+
     patterns = [
         r"\bcompare\s+(.+?)\s+(?:and|with)\s+(.+)$",
         r"\bdifference\s+between\s+(.+?)\s+and\s+(.+)$",
+        r"\bwhich\s+is\s+better\s+(.+?)\s+or\s+(.+)$",
         r"\b(.+?)\s+vs\.?\s+(.+)$",
         r"\b(.+?)\s+versus\s+(.+)$",
         r"\b([A-Za-z$][A-Za-z0-9$ .&'-]{0,40}?)\s+and\s+([A-Za-z$][A-Za-z0-9$ .&'-]{0,40}?)\s+stocks?\b",
@@ -213,6 +236,82 @@ def extract_comparison_queries(message: str) -> tuple[str, str] | None:
         if left and right and left.lower() != right.lower():
             return left, right
     return None
+
+
+def today_market_open_timestamp() -> int:
+    eastern = ZoneInfo("America/New_York")
+    now = datetime.now(eastern)
+    market_open = datetime.combine(now.date(), time(9, 30), tzinfo=eastern)
+    return int(market_open.timestamp())
+
+
+async def fetch_comparison_stock(query: str) -> dict[str, Any] | None:
+    symbol = clean_symbol(query)
+    if not symbol:
+        return None
+
+    try:
+        resolved = await resolve_stock_symbol(query)
+    except Exception:
+        resolved = None
+
+    if resolved:
+        symbol = resolved["symbol"]
+
+    try:
+        quote_payload = await fetch_finnhub(f"/quote?symbol={quote(symbol)}")
+    except Exception:
+        return None
+
+    if not quote_has_live_price(quote_payload):
+        return None
+
+    now = int(datetime.now(ZoneInfo("America/New_York")).timestamp())
+    start = min(today_market_open_timestamp(), now - 60 * 60)
+    try:
+        candle_payload = await fetch_finnhub(f"/stock/candle?symbol={quote(symbol)}&resolution=5&from={start}&to={now}")
+    except Exception:
+        candle_payload = {}
+
+    candles = []
+    if isinstance(candle_payload, dict) and isinstance(candle_payload.get("c"), list):
+        candles = [
+            float(value)
+            for value in candle_payload["c"]
+            if isinstance(value, (int, float)) and value > 0
+        ]
+
+    if len(candles) < 2:
+        price = float(quote_payload["c"])
+        previous_close = float(quote_payload.get("pc") or price)
+        candles = [previous_close, price]
+
+    return {
+        "ticker": symbol,
+        "price": float(quote_payload["c"]),
+        "change": float(quote_payload.get("dp") if isinstance(quote_payload.get("dp"), (int, float)) else 0),
+        "candles": candles[-80:],
+    }
+
+
+def format_comparison_payload(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+    left_change = float(left["change"])
+    right_change = float(right["change"])
+    if left_change == right_change:
+        text = f"{left['ticker']} and {right['ticker']} are moving about the same today at {left_change:+.2f}%."
+    else:
+        leader = left if left_change > right_change else right
+        laggard = right if left_change > right_change else left
+        text = (
+            f"{leader['ticker']} is outperforming {laggard['ticker']} today, "
+            f"up {float(leader['change']):.2f}% vs {float(laggard['change']):.2f}%."
+        )
+
+    return {
+        "type": "comparison",
+        "text": text,
+        "stocks": [left, right],
+    }
 
 
 def extract_live_data_from_history(history: list[dict[str, str]], queries: list[str]) -> str | None:
@@ -624,13 +723,13 @@ async def chat(request: ChatRequest):
     ]
     comparison_queries = extract_comparison_queries(user_message)
     if comparison_queries:
-        left_result, right_result = await asyncio.gather(
-            fetch_live_stock_data(comparison_queries[0]),
-            fetch_live_stock_data(comparison_queries[1]),
+        left_comparison, right_comparison = await asyncio.gather(
+            fetch_comparison_stock(comparison_queries[0]),
+            fetch_comparison_stock(comparison_queries[1]),
         )
-        if left_result and right_result:
-            return {"reply": format_comparison_reply(left_result, right_result, comparison_queries[0], comparison_queries[1])}
-        if left_result or right_result:
+        if left_comparison and right_comparison:
+            return format_comparison_payload(left_comparison, right_comparison)
+        if left_comparison or right_comparison:
             return {"reply": "I couldn't find live data for that one — try searching it in Bourse using the search bar."}
 
     market_context = await build_chat_market_context()
