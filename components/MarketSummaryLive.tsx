@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, LineChart, Loader2, Star } from "lucide-react";
+import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, LineChart, Star } from "lucide-react";
 import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { getStaticMarketData } from "@/lib/static-demo-data";
 
 export type MarketStock = {
   symbol: string;
@@ -47,8 +48,8 @@ export type ChartSeriesPoint = {
 export type RangeOption = "1D" | "5D" | "1M" | "6M" | "YTD" | "1Y" | "5Y" | "Max";
 
 const RANGE_OPTIONS: RangeOption[] = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "Max"];
-const MAX_LIVE_SAMPLES = 48;
 const LIVE_REFRESH_MS = 15000;
+const isStaticDeployment = Boolean(process.env.NEXT_PUBLIC_BASE_PATH);
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -485,34 +486,6 @@ function MiniChart({ points, isUp }: { points: number[]; isUp: boolean }) {
   );
 }
 
-function LoadingState() {
-  return (
-    <section
-      id="live-stats"
-      className="border-t border-green-900/10 bg-green-100 px-5 pb-12 pt-14 text-green-900 md:px-8 md:pb-14 md:pt-16"
-    >
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-7 flex items-center gap-3">
-          <Loader2 className="size-5 animate-spin text-teal-700" />
-          <div>
-            <h2 className="text-2xl font-semibold md:text-3xl">Market summary</h2>
-            <p className="mt-1 text-sm text-black/50">Fetching live stock market data...</p>
-          </div>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-[2.05fr_1fr]">
-          <div className="h-[356px] animate-pulse rounded-lg border border-black/10 bg-black/[0.03]" />
-          <div className="h-[356px] animate-pulse rounded-lg border border-black/10 bg-black/[0.03]" />
-        </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <div className="h-[280px] animate-pulse rounded-lg border border-black/10 bg-black/[0.03]" />
-          <div className="h-[280px] animate-pulse rounded-lg border border-black/10 bg-black/[0.03]" />
-          <div className="h-[280px] animate-pulse rounded-lg border border-black/10 bg-black/[0.03]" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function StateCard({ title, message, action }: { title: string; message: string; action?: string }) {
   return (
     <section
@@ -669,22 +642,27 @@ export default function MarketSummaryLive({
 }: {
   onSelectCompany?: (stock: MarketSummarySelection) => void;
 }) {
-  const [data, setData] = useState<MarketSummaryResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState<RangeOption>("1D");
   const [selectedSymbol, setSelectedSymbol] = useState("SPY");
-  const [liveSamples, setLiveSamples] = useState<ChartSeriesPoint[]>([]);
+  const [data, setData] = useState<MarketSummaryResponse>(() => getStaticMarketData(selectedSymbol));
+  const [isStaticDemo, setIsStaticDemo] = useState(isStaticDeployment);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function loadMarketData(showLoading = false) {
+    function loadStaticData() {
+      if (!isMounted) return;
+      setData(getStaticMarketData(selectedSymbol));
+      setIsStaticDemo(true);
+    }
+
+    async function loadMarketData() {
+      if (isStaticDeployment) {
+        loadStaticData();
+        return;
+      }
+
       try {
-        if (showLoading) {
-          setIsLoading(true);
-          setError(null);
-        }
         const response = await fetch(
           `/api/market-summary?range=${encodeURIComponent(selectedRange)}&symbol=${encodeURIComponent(selectedSymbol)}&t=${Date.now()}`,
           { cache: "no-store" }
@@ -697,63 +675,21 @@ export default function MarketSummaryLive({
 
         if (isMounted) {
           setData(payload);
-          if (payload.marketSummary?.price) {
-            setLiveSamples((currentSamples) => {
-              if (selectedRange !== "1D" || payload.chartSource !== "quote-session") {
-                return [];
-              }
-
-              const baseSeries = payload.chartSeries?.length
-                ? payload.chartSeries
-                : (payload.chartPoints?.length
-                    ? payload.chartPoints
-                    : (payload.marketSummary?.chartPoints ?? [])
-                  ).map((price, index, prices) => ({
-                    price,
-                    time: Math.floor(Date.now() / 1000) - (prices.length - index - 1) * 15 * 60,
-                  }));
-              const nextSamples =
-                currentSamples.length > 0
-                  ? [
-                      ...currentSamples,
-                      { price: payload.marketSummary?.price ?? 0, time: Math.floor(Date.now() / 1000) },
-                    ]
-                  : baseSeries;
-              return nextSamples.slice(-MAX_LIVE_SAMPLES);
-            });
-          }
+          setIsStaticDemo(false);
         }
-      } catch (loadError) {
-        if (isMounted && showLoading) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to fetch market data.");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      } catch {
+        loadStaticData();
       }
     }
 
-    loadMarketData(true);
-    const intervalId = window.setInterval(() => loadMarketData(false), LIVE_REFRESH_MS);
+    void loadMarketData();
+    const intervalId = window.setInterval(() => void loadMarketData(), LIVE_REFRESH_MS);
 
     return () => {
       isMounted = false;
       window.clearInterval(intervalId);
     };
   }, [selectedRange, selectedSymbol]);
-
-  if (isLoading) return <LoadingState />;
-
-  if (error) {
-    return (
-      <StateCard
-        title="Live market data is unavailable"
-        message={error}
-        action="Check the Finnhub API key and /api/market-summary backend route."
-      />
-    );
-  }
 
   if (!data || (!data.marketSummary && data.trendingStocks.length === 0 && data.majorIndices.length === 0)) {
     return (
@@ -766,15 +702,13 @@ export default function MarketSummaryLive({
   }
 
   const summary = data.marketSummary;
-  const updatedAt = data.updatedAt
-    ? new Date(data.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-    : null;
-  const chartSeries =
-    selectedRange === "1D" && liveSamples.length >= 2
-      ? liveSamples
-      : data.chartSeries?.length
-        ? data.chartSeries
-        : data.chartPoints.map((price) => ({ price }));
+  const updatedAt =
+    data.updatedAt && data.updatedAt !== "Static demo"
+      ? new Date(data.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      : null;
+  const chartSeries = data.chartSeries?.length
+    ? data.chartSeries
+    : data.chartPoints.map((price) => ({ price }));
   const latestChartPoint = chartSeries[chartSeries.length - 1];
   const displaySummary = (() => {
     if (!summary || !latestChartPoint?.price || data.chartSource === "quote-session") {
@@ -800,7 +734,6 @@ export default function MarketSummaryLive({
 
   function handleSelectStock(stock: MarketStock) {
     setSelectedSymbol(stock.symbol);
-    setLiveSamples([]);
     onSelectCompany?.(stock);
   }
 
@@ -816,7 +749,7 @@ export default function MarketSummaryLive({
               <h2 className="text-2xl font-semibold tracking-normal md:text-3xl">Market summary</h2>
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/50">
-              Live stock quotes from the backend, ranked into market movers and a watchlist-style preview.
+              Demo stock quotes ranked into market movers and a watchlist-style preview.
             </p>
           </div>
           <div className="flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
@@ -824,7 +757,7 @@ export default function MarketSummaryLive({
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
             </span>
-            Live data{updatedAt ? ` · ${updatedAt}` : ""}
+            {isStaticDemo ? "Static demo" : `Live data${updatedAt ? ` · ${updatedAt}` : ""}`}
           </div>
         </div>
 
@@ -972,6 +905,12 @@ export default function MarketSummaryLive({
             )}
           </div>
         </article>
+        {isStaticDemo ? (
+          <p className="mt-5 text-center text-xs font-semibold leading-5 text-green-950/45">
+            Market data shown is static. Live data requires the backend service which is currently offline to
+            reduce hosting costs.
+          </p>
+        ) : null}
       </div>
     </section>
   );

@@ -29,6 +29,9 @@ const links = [
   },
 ];
 
+const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const iconSrc = `${publicBasePath}/bourse-icon.svg`;
+
 function XIcon() {
   return (
     <svg
@@ -74,13 +77,7 @@ export default function SiteFooter() {
               aria-label="Go home"
               className="inline-flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"
             >
-              <Image
-                src="/assets/icons/bourse-icon.svg"
-                alt="Bourse"
-                width={44}
-                height={44}
-                className="size-10"
-              />
+              <Image src={iconSrc} alt="Bourse" width={44} height={44} className="size-10" />
             </Link>
             <div>
               <h2 className="text-2xl font-bold">Bourse</h2>

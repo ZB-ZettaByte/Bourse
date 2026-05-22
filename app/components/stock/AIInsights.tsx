@@ -3,29 +3,50 @@
 import { Lightbulb, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+const isStaticDeployment = Boolean(process.env.NEXT_PUBLIC_BASE_PATH);
+
 export default function AIInsights({ symbol }: { symbol: string }) {
   const [insights, setInsights] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!isStaticDeployment);
 
   useEffect(() => {
     let isMounted = true;
 
+    function loadStaticInsights() {
+      if (!isMounted) return;
+
+      setInsights([
+        `${symbol} is using static demo data while the backend is offline.`,
+        "Price, stats, and news are included so the research workflow stays visible.",
+        "Run the FastAPI backend locally to restore live AI insight generation.",
+      ]);
+      setIsLoading(false);
+    }
+
     async function loadInsights() {
+      if (isStaticDeployment) {
+        loadStaticInsights();
+        return;
+      }
+
       setIsLoading(true);
+
       try {
         const response = await fetch(`/api/insights?symbol=${encodeURIComponent(symbol)}`, {
           cache: "no-store",
         });
         const payload = (await response.json()) as { insights?: string[] };
-        if (isMounted) setInsights(Array.isArray(payload.insights) ? payload.insights.slice(0, 3) : []);
+        if (isMounted) {
+          setInsights(Array.isArray(payload.insights) ? payload.insights.slice(0, 3) : []);
+        }
       } catch {
-        if (isMounted) setInsights([]);
+        loadStaticInsights();
       } finally {
         if (isMounted) setIsLoading(false);
       }
     }
 
-    loadInsights();
+    void loadInsights();
 
     return () => {
       isMounted = false;

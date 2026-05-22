@@ -3,6 +3,7 @@
 import { Loader2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { STATIC_SEARCH_SUGGESTIONS } from "@/lib/static-demo-data";
 
 type SearchMatch = {
   ticker: string;
@@ -16,6 +17,9 @@ type SemanticStockSearchProps = {
   surface?: "dark" | "light";
 };
 
+const isStaticDeployment = Boolean(process.env.NEXT_PUBLIC_BASE_PATH);
+const EMPTY_SEARCH_MATCHES: SearchMatch[] = [];
+
 export default function SemanticStockSearch({ className = "", surface = "dark" }: SemanticStockSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -23,7 +27,9 @@ export default function SemanticStockSearch({ className = "", surface = "dark" }
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const showDropdown = isFocused && (query.trim().length > 0 || matches.length > 0);
+  const defaultMatches = isStaticDeployment ? STATIC_SEARCH_SUGGESTIONS : EMPTY_SEARCH_MATCHES;
+  const visibleMatches = query.trim().length > 0 ? matches : defaultMatches;
+  const showDropdown = isFocused && visibleMatches.length > 0;
   const isLight = surface === "light";
 
   useEffect(() => {
@@ -40,8 +46,24 @@ export default function SemanticStockSearch({ className = "", surface = "dark" }
     const controller = new AbortController();
     abortRef.current = controller;
     const timeoutId = window.setTimeout(async () => {
+      if (controller.signal.aborted) return;
+
+      setIsLoading(true);
+
       try {
-        setIsLoading(true);
+        if (isStaticDeployment) {
+          const normalized = trimmed.toLowerCase();
+          const filteredMatches = STATIC_SEARCH_SUGGESTIONS.filter((match) => {
+            return (
+              match.ticker.toLowerCase().includes(normalized) ||
+              match.companyName.toLowerCase().includes(normalized)
+            );
+          });
+
+          setMatches(filteredMatches.slice(0, 8));
+          return;
+        }
+
         const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
           cache: "no-store",
           signal: controller.signal,
@@ -50,10 +72,19 @@ export default function SemanticStockSearch({ className = "", surface = "dark" }
         setMatches(Array.isArray(payload.results) ? payload.results.slice(0, 8) : []);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === "AbortError")) {
-          setMatches([]);
+          const normalized = trimmed.toLowerCase();
+          const fallbackMatches = STATIC_SEARCH_SUGGESTIONS.filter((match) => {
+            return (
+              match.ticker.toLowerCase().includes(normalized) ||
+              match.companyName.toLowerCase().includes(normalized)
+            );
+          });
+          setMatches(fallbackMatches.slice(0, 8));
         }
       } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }, 300);
 
@@ -75,7 +106,7 @@ export default function SemanticStockSearch({ className = "", surface = "dark" }
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.preventDefault();
-      openMatch(matches[0]);
+      openMatch(visibleMatches[0]);
     }
     if (event.key === "Escape") {
       setIsFocused(false);
@@ -112,9 +143,9 @@ export default function SemanticStockSearch({ className = "", surface = "dark" }
 
       {showDropdown && (
         <div className="absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-lg border border-white/10 bg-black/95 shadow-2xl shadow-black/40 backdrop-blur-xl">
-          {matches.length > 0 ? (
+          {visibleMatches.length > 0 ? (
             <ul className="divide-y divide-white/10">
-              {matches.map((match) => (
+              {visibleMatches.map((match) => (
                 <li key={match.ticker}>
                   <button
                     type="button"

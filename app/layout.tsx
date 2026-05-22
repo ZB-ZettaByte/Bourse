@@ -14,13 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "Bourse",
   description: "Track real-time stock prices, get personalized alerts and explore detailed company insights.",
   icons: {
-    icon: "/assets/icons/bourse-icon.svg",
-    shortcut: "/assets/icons/bourse-icon.svg",
-    apple: "/assets/icons/bourse-icon.svg",
+    icon: `${publicBasePath}/bourse-icon.svg`,
+    shortcut: `${publicBasePath}/bourse-icon.svg`,
+    apple: `${publicBasePath}/bourse-icon.svg`,
   },
 };
 

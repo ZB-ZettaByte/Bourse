@@ -23,6 +23,10 @@ type MarketSummaryPayload = {
   } | null;
 };
 
+const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const logoSrc = `${publicBasePath}/logo.svg`;
+const iconSrc = `${publicBasePath}/bourse-icon.svg`;
+
 function formatCompactPrice(value?: number) {
   return typeof value === "number" && Number.isFinite(value)
     ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(
@@ -75,6 +79,7 @@ export default function LandingHeader({
 
   useEffect(() => {
     if (!selectedCompany?.symbol) return;
+    if (selectedCompany.price) return;
     const symbol = selectedCompany.symbol;
     let isMounted = true;
 
@@ -104,7 +109,7 @@ export default function LandingHeader({
       isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, [selectedCompany?.symbol]);
+  }, [selectedCompany?.price, selectedCompany?.symbol]);
 
   return (
     <header>
@@ -138,7 +143,7 @@ export default function LandingHeader({
                   className="flex shrink-0 items-center"
                 >
                   <Image
-                    src={showWordmark ? "/assets/icons/logo.svg" : "/assets/icons/bourse-icon.svg"}
+                    src={showWordmark ? logoSrc : iconSrc}
                     alt="Bourse"
                     width={showWordmark ? 184 : 44}
                     height={44}

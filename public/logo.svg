@@ -1,0 +1,7 @@
+<svg width="184" height="44" viewBox="0 0 184 44" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bourse">
+  <circle cx="22" cy="22" r="19" fill="#22C55E"/>
+  <path d="M14 29L20 22L25 26L32 15" stroke="#050505" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 15H32V19" stroke="#050505" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 33C17 36 27 36 32 33" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <text x="54" y="32" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.8">Bourse</text>
+</svg>

@@ -44,8 +44,11 @@ const starterMessages = [
   "Explain P/E ratio simply",
   "Is NVDA a good buy right now?",
 ];
+const offlineReply =
+  "Bourse AI is currently offline. The backend service is not running to reduce hosting costs. For a live demo, please check the project README for instructions to run locally.";
 const publicBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const bourseIconSrc = `${publicBasePath}/bourse-icon.svg`;
+const isStaticDeployment = Boolean(process.env.NEXT_PUBLIC_BASE_PATH);
 
 export default function FloatingAIChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -63,6 +66,15 @@ export default function FloatingAIChat() {
     setInput("");
     setIsSending(true);
 
+    if (isStaticDeployment) {
+      window.setTimeout(() => {
+        setMessages([...nextMessages, { role: "assistant", content: offlineReply, isTyping: true }]);
+        setIsSending(false);
+        window.setTimeout(() => inputRef.current?.focus(), 0);
+      }, 500);
+      return;
+    }
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -74,6 +86,7 @@ export default function FloatingAIChat() {
         }),
       });
       const payload = (await response.json()) as ChatPayload;
+
       if (payload.type === "comparison" && payload.text && Array.isArray(payload.stocks)) {
         setMessages([
           ...nextMessages,
@@ -87,14 +100,11 @@ export default function FloatingAIChat() {
           },
         ]);
       } else {
-        const reply = payload.reply?.trim() || payload.error || "Bourse AI is unavailable right now.";
+        const reply = payload.reply?.trim() || payload.error || offlineReply;
         setMessages([...nextMessages, { role: "assistant", content: reply, isTyping: true }]);
       }
     } catch {
-      setMessages([
-        ...nextMessages,
-        { role: "assistant", content: "Bourse AI is unavailable right now.", isTyping: true },
-      ]);
+      setMessages([...nextMessages, { role: "assistant", content: offlineReply, isTyping: true }]);
     } finally {
       setIsSending(false);
       window.setTimeout(() => inputRef.current?.focus(), 0);

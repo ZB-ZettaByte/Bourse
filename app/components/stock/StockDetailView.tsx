@@ -14,6 +14,7 @@ type StockDetailViewProps = {
   change?: number;
   changePercent?: number;
   previousClose?: number;
+  isStaticDemo?: boolean;
   summary: {
     symbol: string;
     name: string;
@@ -332,11 +333,13 @@ function StockPriceChart({
   fallbackPoints,
   summary,
   onSummaryUpdate,
+  isStaticDemo = false,
 }: {
   detail: StockDetailData;
   fallbackPoints: number[];
   summary: StockDetailViewProps["summary"];
   onSummaryUpdate?: (summary: StockDetailViewProps["summary"]) => void;
+  isStaticDemo?: boolean;
 }) {
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [chartPreviousClose, setChartPreviousClose] = useState<number | undefined>(summary.previousClose);
@@ -349,6 +352,20 @@ function StockPriceChart({
     let isMounted = true;
 
     async function loadChart() {
+      if (isStaticDemo) {
+        const start = new Date();
+        start.setHours(9, 30, 0, 0);
+        setChartData(
+          fallbackPoints.map((price, index) => ({
+            price,
+            time: Math.floor((start.getTime() + index * 5 * 60 * 1000) / 1000),
+          }))
+        );
+        setChartPreviousClose(summary.previousClose);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const response = await fetch(
@@ -373,7 +390,7 @@ function StockPriceChart({
     return () => {
       isMounted = false;
     };
-  }, [detail.symbol, onSummaryUpdate, range, summary.previousClose]);
+  }, [detail.symbol, fallbackPoints, isStaticDemo, onSummaryUpdate, range, summary.previousClose]);
 
   useEffect(() => {
     const element = chartRef.current;
@@ -730,6 +747,12 @@ function NewsGrid({ detail }: { detail: StockDetailData }) {
     let isMounted = true;
 
     async function loadNews() {
+      if (detail.news.length > 0) {
+        setArticles(detail.news.slice(0, 15));
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
       try {
@@ -751,7 +774,7 @@ function NewsGrid({ detail }: { detail: StockDetailData }) {
     return () => {
       isMounted = false;
     };
-  }, [detail.symbol]);
+  }, [detail.news, detail.symbol]);
 
   return (
     <section className="space-y-5">
@@ -826,7 +849,8 @@ function Overview({
   detail,
   summary,
   onSummaryUpdate,
-}: Pick<StockDetailViewProps, "detail" | "summary"> & {
+  isStaticDemo,
+}: Pick<StockDetailViewProps, "detail" | "summary" | "isStaticDemo"> & {
   onSummaryUpdate: (summary: StockDetailViewProps["summary"]) => void;
 }) {
   const latestEarnings = detail.earnings[0];
@@ -839,6 +863,7 @@ function Overview({
           fallbackPoints={summary.chartPoints}
           summary={summary}
           onSummaryUpdate={onSummaryUpdate}
+          isStaticDemo={isStaticDemo}
         />
         <EarningsBanner earnings={latestEarnings} />
       </section>
@@ -856,6 +881,7 @@ export default function StockDetailView({
   change,
   changePercent,
   summary,
+  isStaticDemo = false,
 }: StockDetailViewProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("Overview");
   const [liveSummary, setLiveSummary] = useState(summary);
@@ -897,6 +923,8 @@ export default function StockDetailView({
   const profile = detail.profile;
 
   useEffect(() => {
+    if (isStaticDemo) return;
+
     let isMounted = true;
 
     async function loadLatestQuote() {
@@ -919,9 +947,10 @@ export default function StockDetailView({
       isMounted = false;
       window.clearInterval(intervalId);
     };
-  }, [detail.symbol]);
+  }, [detail.symbol, isStaticDemo]);
 
   useEffect(() => {
+    if (isStaticDemo) return;
     if (!FINNHUB_WS_TOKEN) return;
 
     const socket = new WebSocket(`wss://ws.finnhub.io?token=${encodeURIComponent(FINNHUB_WS_TOKEN)}`);
@@ -950,7 +979,7 @@ export default function StockDetailView({
       }
       socket.close();
     };
-  }, [detail.symbol, updateLivePrice]);
+  }, [detail.symbol, isStaticDemo, updateLivePrice]);
 
   return (
     <div>
@@ -1033,7 +1062,12 @@ export default function StockDetailView({
           </div>
 
           {activeTab === "Overview" && (
-            <Overview detail={detail} summary={liveSummary} onSummaryUpdate={updateLiveSummary} />
+            <Overview
+              detail={detail}
+              summary={liveSummary}
+              onSummaryUpdate={updateLiveSummary}
+              isStaticDemo={isStaticDemo}
+            />
           )}
           {activeTab === "Financials" && (
             <div className="space-y-8">

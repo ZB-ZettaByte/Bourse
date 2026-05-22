@@ -8,8 +8,10 @@ import {
   type MarketStock,
   type RangeOption,
 } from "@/components/MarketSummaryLive";
+import { getStaticMarketData } from "@/lib/static-demo-data";
 
 const RANGES: RangeOption[] = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y"];
+const isStaticDeployment = Boolean(process.env.NEXT_PUBLIC_BASE_PATH);
 
 type MarketSummaryResponse = {
   marketSummary: MarketStock | null;
@@ -35,6 +37,16 @@ export default function StockChart({
 
     async function loadChart() {
       setIsLoading(true);
+
+      if (isStaticDeployment) {
+        const payload = getStaticMarketData(symbol) as MarketSummaryResponse;
+        if (isMounted) {
+          setData(payload);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
         const response = await fetch(
           `/api/market-summary?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}&t=${Date.now()}`,
@@ -43,6 +55,9 @@ export default function StockChart({
           }
         );
         const payload = (await response.json()) as MarketSummaryResponse;
+        if (isMounted) setData(payload);
+      } catch {
+        const payload = getStaticMarketData(symbol) as MarketSummaryResponse;
         if (isMounted) setData(payload);
       } finally {
         if (isMounted) setIsLoading(false);
