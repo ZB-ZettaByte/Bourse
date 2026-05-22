@@ -1,0 +1,12 @@
+.next
+out
+node_modules
+.pnpm-store
+.venv
+tsconfig.tsbuildinfo
+package-lock.json
+pnpm-lock.yaml
+*.ico
+*.pyc
+__pycache__
+.env

@@ -2,7 +2,7 @@ import os
 import re
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
@@ -33,6 +33,7 @@ def load_local_env() -> None:
 load_local_env()
 
 FINNHUB_BASE_URL = os.getenv("FINNHUB_BASE_URL", "https://finnhub.io/api/v1")
+YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY") or os.getenv("NEXT_PUBLIC_FINNHUB_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
@@ -132,6 +133,7 @@ CHAT_TICKER_SKIP_WORDS = {
     "P",
     "SEC",
     "USD",
+    "VS",
 }
 STOCK_NAMES = {
     "AAPL": "Apple Inc.",
@@ -192,7 +194,7 @@ def format_chat_reply(content: str) -> str:
 def clean_stock_query(value: str) -> str:
     query = re.sub(r"[$?!.:,;]", " ", value).strip()
     query = re.sub(
-        r"\b(stock|stocks|share|shares|price|prices|quote|quotes|today|now|right now|performance|ticker|tickers)\b",
+        r"\b(compare|difference|between|with|and|versus|vs|stock|stocks|share|shares|price|prices|quote|quotes|today|now|right now|performance|ticker|tickers)\b",
         " ",
         query,
         flags=re.IGNORECASE,
@@ -202,24 +204,9 @@ def clean_stock_query(value: str) -> str:
 
 
 def extract_comparison_queries(message: str) -> tuple[str, str] | None:
-    if re.search(r"\b(?:compare|vs\.?|versus|which is better)\b", message, flags=re.IGNORECASE):
-        uppercase_symbols = [
-            clean_symbol(token)
-            for token in re.findall(r"(?<![A-Za-z])\$?([A-Z]{1,5})(?![A-Za-z])", message)
-            if clean_symbol(token) not in CHAT_TICKER_SKIP_WORDS
-        ]
-        if len(uppercase_symbols) >= 2 and uppercase_symbols[0] != uppercase_symbols[1]:
-            return uppercase_symbols[0], uppercase_symbols[1]
-
-    ticker_match = COMPARE_PATTERN.search(message)
-    if ticker_match:
-        left = clean_symbol(ticker_match.group(1))
-        right = clean_symbol(ticker_match.group(2))
-        if left and right and left != right:
-            return left, right
-
     patterns = [
         r"\bcompare\s+(.+?)\s+(?:and|with)\s+(.+)$",
+        r"\bcompare\s+(.+?)\s+vs\.?\s+(.+)$",
         r"\bdifference\s+between\s+(.+?)\s+and\s+(.+)$",
         r"\bwhich\s+is\s+better\s+(.+?)\s+or\s+(.+)$",
         r"\b(.+?)\s+vs\.?\s+(.+)$",
@@ -234,6 +221,22 @@ def extract_comparison_queries(message: str) -> tuple[str, str] | None:
         left = clean_stock_query(match.group(1))
         right = clean_stock_query(match.group(2))
         if left and right and left.lower() != right.lower():
+            return left, right
+
+    if re.search(r"\b(?:compare|vs\.?|versus|which is better)\b", message, flags=re.IGNORECASE):
+        uppercase_symbols = [
+            clean_symbol(token)
+            for token in re.findall(r"(?<![A-Za-z])\$?([A-Z]{1,5})(?![A-Za-z])", message)
+            if clean_symbol(token) not in CHAT_TICKER_SKIP_WORDS
+        ]
+        if len(uppercase_symbols) >= 2 and uppercase_symbols[0] != uppercase_symbols[1]:
+            return uppercase_symbols[0], uppercase_symbols[1]
+
+    ticker_match = COMPARE_PATTERN.search(message)
+    if ticker_match:
+        left = clean_symbol(ticker_match.group(1))
+        right = clean_symbol(ticker_match.group(2))
+        if left and right and left != right and left not in CHAT_TICKER_SKIP_WORDS and right not in CHAT_TICKER_SKIP_WORDS:
             return left, right
     return None
 
@@ -266,32 +269,94 @@ async def fetch_comparison_stock(query: str) -> dict[str, Any] | None:
     if not quote_has_live_price(quote_payload):
         return None
 
-    now = int(datetime.now(ZoneInfo("America/New_York")).timestamp())
-    start = min(today_market_open_timestamp(), now - 60 * 60)
-    try:
-        candle_payload = await fetch_finnhub(f"/stock/candle?symbol={quote(symbol)}&resolution=5&from={start}&to={now}")
-    except Exception:
-        candle_payload = {}
-
-    candles = []
-    if isinstance(candle_payload, dict) and isinstance(candle_payload.get("c"), list):
-        candles = [
-            float(value)
-            for value in candle_payload["c"]
-            if isinstance(value, (int, float)) and value > 0
-        ]
-
-    if len(candles) < 2:
-        price = float(quote_payload["c"])
-        previous_close = float(quote_payload.get("pc") or price)
-        candles = [previous_close, price]
+    candles, candle_times = await fetch_recent_five_minute_candles(symbol)
 
     return {
         "ticker": symbol,
         "price": float(quote_payload["c"]),
         "change": float(quote_payload.get("dp") if isinstance(quote_payload.get("dp"), (int, float)) else 0),
         "candles": candles[-80:],
+        "times": candle_times[-80:],
     }
+
+
+async def fetch_recent_five_minute_candles(symbol: str) -> tuple[list[float], list[int]]:
+    eastern = ZoneInfo("America/New_York")
+    now = datetime.now(eastern)
+
+    for day_offset in range(0, 10):
+        day = now.date() - timedelta(days=day_offset)
+        if day.weekday() >= 5:
+            continue
+
+        market_open = datetime.combine(day, time(9, 30), tzinfo=eastern)
+        market_close = datetime.combine(day, time(16, 0), tzinfo=eastern)
+        end = min(now, market_close) if day_offset == 0 else market_close
+        if end <= market_open:
+            continue
+
+        try:
+            candle_payload = await fetch_finnhub(
+                f"/stock/candle?symbol={quote(symbol)}&resolution=5&from={int(market_open.timestamp())}&to={int(end.timestamp())}"
+            )
+        except Exception:
+            continue
+
+        if not isinstance(candle_payload, dict) or candle_payload.get("s") != "ok":
+            continue
+
+        raw_prices = candle_payload.get("c")
+        raw_times = candle_payload.get("t")
+        if not isinstance(raw_prices, list) or not isinstance(raw_times, list):
+            continue
+
+        points = [
+            (float(price), int(timestamp))
+            for price, timestamp in zip(raw_prices, raw_times)
+            if isinstance(price, (int, float)) and price > 0 and isinstance(timestamp, (int, float))
+        ]
+        if len(points) >= 4:
+            prices, times = zip(*points)
+            return list(prices), list(times)
+
+    yahoo_prices, yahoo_times = await fetch_yahoo_five_minute_candles(symbol)
+    if len(yahoo_prices) >= 4:
+        return yahoo_prices, yahoo_times
+
+    return [], []
+
+
+async def fetch_yahoo_five_minute_candles(symbol: str) -> tuple[list[float], list[int]]:
+    try:
+        async with httpx.AsyncClient(timeout=12) as client:
+            response = await client.get(
+                f"{YAHOO_CHART_BASE_URL}/{quote(symbol)}?range=1d&interval=5m",
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except Exception:
+        return [], []
+
+    result = payload.get("chart", {}).get("result", [None])[0] if isinstance(payload, dict) else None
+    if not isinstance(result, dict):
+        return [], []
+
+    raw_times = result.get("timestamp")
+    raw_closes = result.get("indicators", {}).get("quote", [{}])[0].get("close")
+    if not isinstance(raw_times, list) or not isinstance(raw_closes, list):
+        return [], []
+
+    points = [
+        (float(price), int(timestamp))
+        for price, timestamp in zip(raw_closes, raw_times)
+        if isinstance(price, (int, float)) and price > 0 and isinstance(timestamp, (int, float))
+    ]
+    if len(points) < 4:
+        return [], []
+
+    prices, times = zip(*points)
+    return list(prices), list(times)
 
 
 def format_comparison_payload(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:

@@ -9,7 +9,10 @@ type NewsRouteProps = {
 
 export async function GET(_request: Request, { params }: NewsRouteProps) {
   const { ticker } = await params;
-  const symbol = ticker.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = ticker
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
 
   if (!symbol) {
     return NextResponse.json({ news: [], error: "Ticker is required." }, { status: 400 });

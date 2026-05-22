@@ -34,7 +34,9 @@ export default function StockHeader({ companyName, ticker, price, change, change
         </div>
         <div className="text-left md:text-right">
           <p className="text-4xl font-semibold leading-none text-white">{formatCurrency(price)}</p>
-          <p className={`mt-3 inline-flex items-center gap-1 text-sm font-bold ${isUp ? "text-emerald-300" : "text-red-400"}`}>
+          <p
+            className={`mt-3 inline-flex items-center gap-1 text-sm font-bold ${isUp ? "text-emerald-300" : "text-red-400"}`}
+          >
             <DirectionIcon className="size-4" />
             {formatSignedCurrency(change)} {formatPercent(changePercent)}
           </p>

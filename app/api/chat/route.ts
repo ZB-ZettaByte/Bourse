@@ -20,6 +20,7 @@ type ChatPayload = {
     price: number;
     change: number;
     candles: number[];
+    times?: number[];
   }>;
 };
 

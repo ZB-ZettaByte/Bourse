@@ -16,7 +16,10 @@ export function generateStaticParams() {
 
 export default async function StockPage({ params }: StockPageProps) {
   const { ticker } = await params;
-  const symbol = ticker.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = ticker
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
 
   if (!symbol) notFound();
 
@@ -25,12 +28,20 @@ export default async function StockPage({ params }: StockPageProps) {
   const profile = detail.profile;
   const current = finiteNumber(quote.c);
   const previousClose = finiteNumber(quote.pc);
-  const change = finiteNumber(quote.d) ?? (current !== undefined && previousClose !== undefined ? current - previousClose : undefined);
-  const changePercent = finiteNumber(quote.dp) ?? (change !== undefined && previousClose ? (change / previousClose) * 100 : undefined);
+  const change =
+    finiteNumber(quote.d) ??
+    (current !== undefined && previousClose !== undefined ? current - previousClose : undefined);
+  const changePercent =
+    finiteNumber(quote.dp) ??
+    (change !== undefined && previousClose ? (change / previousClose) * 100 : undefined);
   const companyName = profile.name ?? symbol;
-  const chartPoints = [previousClose, finiteNumber(quote.o), finiteNumber(quote.l), finiteNumber(quote.h), current].filter(
-    (point): point is number => typeof point === "number" && Number.isFinite(point)
-  );
+  const chartPoints = [
+    previousClose,
+    finiteNumber(quote.o),
+    finiteNumber(quote.l),
+    finiteNumber(quote.h),
+    current,
+  ].filter((point): point is number => typeof point === "number" && Number.isFinite(point));
 
   const summary = {
     symbol,
@@ -48,8 +59,12 @@ export default async function StockPage({ params }: StockPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-green-900 text-white">
-      <LandingHeader selectedCompany={{ symbol, name: companyName, price: current, changePercent }} hideCta />
+    <div className="min-h-screen bg-green-100 text-green-950">
+      <LandingHeader
+        selectedCompany={{ symbol, name: companyName, price: current, changePercent }}
+        hideCta
+        surface="light"
+      />
 
       <main className="mx-auto max-w-[1320px] px-5 py-24 sm:px-6 lg:py-28">
         <StockDetailView

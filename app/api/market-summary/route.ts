@@ -152,7 +152,9 @@ function buildQuoteChartPoints(quote: FinnhubQuote): number[] {
   const high = finitePositive(quote.h);
   const current = finitePositive(quote.c);
 
-  const orderedPoints = [previousClose, open, low, high, current].filter((point): point is number => Boolean(point));
+  const orderedPoints = [previousClose, open, low, high, current].filter((point): point is number =>
+    Boolean(point)
+  );
   const deduped = orderedPoints.filter((point, index) => index === 0 || point !== orderedPoints[index - 1]);
 
   if (deduped.length >= 2) return deduped;
@@ -244,7 +246,16 @@ function getLiveHistory(symbol: string, range: RangeOption) {
 
 function parseRange(value: string | null): RangeOption {
   const normalized = value?.toUpperCase();
-  if (normalized === "1D" || normalized === "5D" || normalized === "1M" || normalized === "6M" || normalized === "YTD" || normalized === "1Y" || normalized === "5Y" || normalized === "MAX") {
+  if (
+    normalized === "1D" ||
+    normalized === "5D" ||
+    normalized === "1M" ||
+    normalized === "6M" ||
+    normalized === "YTD" ||
+    normalized === "1Y" ||
+    normalized === "5Y" ||
+    normalized === "MAX"
+  ) {
     return normalized === "MAX" ? "Max" : normalized;
   }
 
@@ -252,7 +263,10 @@ function parseRange(value: string | null): RangeOption {
 }
 
 function parseSymbol(value: string | null) {
-  const symbol = value?.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = value
+    ?.trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
   return symbol || "SPY";
 }
 
@@ -264,7 +278,9 @@ async function fetchFinnhub<T>(path: string): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    const error = new Error(`Finnhub request failed ${response.status}: ${text}`) as Error & { status?: number };
+    const error = new Error(`Finnhub request failed ${response.status}: ${text}`) as Error & {
+      status?: number;
+    };
     error.status = response.status;
     throw error;
   }
@@ -281,7 +297,9 @@ async function getProfile(symbol: string): Promise<FinnhubProfile> {
   }
 
   try {
-    const profile = await fetchFinnhub<FinnhubProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`);
+    const profile = await fetchFinnhub<FinnhubProfile>(
+      `/stock/profile2?symbol=${encodeURIComponent(symbol)}`
+    );
     stockProfileCache[symbol] = { profile, fetchedAt: now };
     return profile;
   } catch {
@@ -335,7 +353,8 @@ async function getYahooChart(symbol: string, range: RangeOption): Promise<ChartD
     const result = data.chart?.result?.[0];
     const closes = result?.indicators?.quote?.[0]?.close ?? [];
     const timestamps = result?.timestamp ?? [];
-    const previousClose = finitePositive(result?.meta?.chartPreviousClose) ?? finitePositive(result?.meta?.previousClose);
+    const previousClose =
+      finitePositive(result?.meta?.chartPreviousClose) ?? finitePositive(result?.meta?.previousClose);
 
     return {
       points: closes
@@ -374,29 +393,34 @@ async function getStock(symbol: string, forceFresh = false): Promise<StockFetchR
     }
 
     const change = Number.isFinite(Number(quote.d)) ? Number(quote.d) : price - previousClose;
-    const changePercent = Number.isFinite(Number(quote.dp)) ? Number(quote.dp) : (change / previousClose) * 100;
+    const changePercent = Number.isFinite(Number(quote.dp))
+      ? Number(quote.dp)
+      : (change / previousClose) * 100;
 
     const stock = {
-        symbol,
-        name: profile.name || STOCK_NAMES[symbol] || symbol,
-        exchange: "US",
-        logo: profile.logo || STOCK_LOGOS[symbol] || undefined,
-        price,
-        change,
-        changePercent,
-        previousClose,
-        open: finitePositive(quote.o),
-        high: finitePositive(quote.h),
-        low: finitePositive(quote.l),
-        updatedAt: Number.isFinite(Number(quote.t)) ? Number(quote.t) : undefined,
-        chartPoints: buildQuoteChartPoints(quote),
-      };
+      symbol,
+      name: profile.name || STOCK_NAMES[symbol] || symbol,
+      exchange: "US",
+      logo: profile.logo || STOCK_LOGOS[symbol] || undefined,
+      price,
+      change,
+      changePercent,
+      previousClose,
+      open: finitePositive(quote.o),
+      high: finitePositive(quote.h),
+      low: finitePositive(quote.l),
+      updatedAt: Number.isFinite(Number(quote.t)) ? Number(quote.t) : undefined,
+      chartPoints: buildQuoteChartPoints(quote),
+    };
 
     stockQuoteCache[symbol] = { stock, fetchedAt: now };
 
     return { stock };
   } catch (error) {
-    const status = error instanceof Error && "status" in error ? Number((error as Error & { status?: number }).status) : undefined;
+    const status =
+      error instanceof Error && "status" in error
+        ? Number((error as Error & { status?: number }).status)
+        : undefined;
     if (cached && now - cached.fetchedAt < STALE_QUOTE_TTL_MS) {
       return { stock: cached.stock, errorStatus: status };
     }
@@ -420,10 +444,18 @@ export async function GET(request: Request) {
   const selectedRange = parseRange(searchParams.get("range"));
   const selectedSymbol = parseSymbol(searchParams.get("symbol"));
   const forceLiveQuote = searchParams.get("live") === "1" || searchParams.get("refresh") === "1";
-  const symbols = Array.from(new Set([selectedSymbol, ...LANDING_SYMBOLS, ...MARKET_PROXIES.map((item) => item.symbol)]));
-  const results = await Promise.all(symbols.map((symbol) => getStock(symbol, forceLiveQuote && symbol === selectedSymbol)));
-  const stocks = results.map((result) => result.stock).filter((stock): stock is MarketStock => Boolean(stock));
-  const failedStatuses = results.map((result) => result.errorStatus).filter((status): status is number => Number.isFinite(status));
+  const symbols = Array.from(
+    new Set([selectedSymbol, ...LANDING_SYMBOLS, ...MARKET_PROXIES.map((item) => item.symbol)])
+  );
+  const results = await Promise.all(
+    symbols.map((symbol) => getStock(symbol, forceLiveQuote && symbol === selectedSymbol))
+  );
+  const stocks = results
+    .map((result) => result.stock)
+    .filter((stock): stock is MarketStock => Boolean(stock));
+  const failedStatuses = results
+    .map((result) => result.errorStatus)
+    .filter((status): status is number => Number.isFinite(status));
 
   if (stocks.length === 0) {
     const rateLimited = failedStatuses.includes(429);
@@ -447,24 +479,45 @@ export async function GET(request: Request) {
     );
   }
 
-  const marketSummary = stocks.find((stock) => stock.symbol === selectedSymbol) ?? stocks.find((stock) => stock.symbol === "SPY") ?? stocks[0] ?? null;
+  const marketSummary =
+    stocks.find((stock) => stock.symbol === selectedSymbol) ??
+    stocks.find((stock) => stock.symbol === "SPY") ??
+    stocks[0] ??
+    null;
   const marketProxySymbols = new Set(MARKET_PROXIES.map((item) => item.symbol));
-  const majorIndices = MARKET_PROXIES
-    .map((proxy) => {
-      const stock = stocks.find((item) => item.symbol === proxy.symbol);
-      return stock ? { ...stock, name: proxy.name, code: proxy.code, logo: stock.logo || proxy.logo } : null;
-    })
-    .filter((stock): stock is MarketStock & { code: string; logo: string } => Boolean(stock));
+  const majorIndices = MARKET_PROXIES.map((proxy) => {
+    const stock = stocks.find((item) => item.symbol === proxy.symbol);
+    return stock ? { ...stock, name: proxy.name, code: proxy.code, logo: stock.logo || proxy.logo } : null;
+  }).filter((stock): stock is MarketStock & { code: string; logo: string } => Boolean(stock));
 
   const equities = stocks.filter((stock) => !marketProxySymbols.has(stock.symbol));
-  const topGainers = [...equities].filter((stock) => stock.changePercent > 0).sort((a, b) => b.changePercent - a.changePercent).slice(0, 5);
-  const topLosers = [...equities].filter((stock) => stock.changePercent < 0).sort((a, b) => a.changePercent - b.changePercent).slice(0, 5);
-  const trendingStocks = [...equities].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent)).slice(0, 6);
+  const topGainers = [...equities]
+    .filter((stock) => stock.changePercent > 0)
+    .sort((a, b) => b.changePercent - a.changePercent)
+    .slice(0, 5);
+  const topLosers = [...equities]
+    .filter((stock) => stock.changePercent < 0)
+    .sort((a, b) => a.changePercent - b.changePercent)
+    .slice(0, 5);
+  const trendingStocks = [...equities]
+    .sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent))
+    .slice(0, 6);
   const watchlistPreview = equities.slice(0, 4);
   const candleSeries = marketSummary ? await getCandles(marketSummary.symbol, selectedRange) : [];
-  const yahooChart = marketSummary && candleSeries.length < 2 ? await getYahooChart(marketSummary.symbol, selectedRange) : { points: [] };
+  const yahooChart =
+    marketSummary && candleSeries.length < 2
+      ? await getYahooChart(marketSummary.symbol, selectedRange)
+      : { points: [] };
   const liveHistorySeries = marketSummary ? getLiveHistory(marketSummary.symbol, selectedRange) : [];
-  const quoteSeries = marketSummary ? buildQuoteChartSeries({ pc: marketSummary.previousClose, o: marketSummary.open, l: marketSummary.low, h: marketSummary.high, c: marketSummary.price }) : [];
+  const quoteSeries = marketSummary
+    ? buildQuoteChartSeries({
+        pc: marketSummary.previousClose,
+        o: marketSummary.open,
+        l: marketSummary.low,
+        h: marketSummary.high,
+        c: marketSummary.price,
+      })
+    : [];
   const chartSeries =
     candleSeries.length >= 2
       ? candleSeries
@@ -482,7 +535,11 @@ export async function GET(request: Request) {
           ...chartSeries,
           {
             price: marketSummary.price,
-            time: Math.max(marketSummary.updatedAt ?? 0, (chartSeries[chartSeries.length - 1]?.time ?? 0) + 1, Math.floor(Date.now() / 1000)),
+            time: Math.max(
+              marketSummary.updatedAt ?? 0,
+              (chartSeries[chartSeries.length - 1]?.time ?? 0) + 1,
+              Math.floor(Date.now() / 1000)
+            ),
           },
         ]
       : chartSeries;
@@ -498,7 +555,9 @@ export async function GET(request: Request) {
             ? "quote-session"
             : "unavailable";
   const chartPreviousClose = yahooChart.previousClose ?? marketSummary?.previousClose;
-  const displayMarketSummary = marketSummary ? { ...marketSummary, chartPoints: chartPoints.length >= 2 ? chartPoints : marketSummary.chartPoints } : marketSummary;
+  const displayMarketSummary = marketSummary
+    ? { ...marketSummary, chartPoints: chartPoints.length >= 2 ? chartPoints : marketSummary.chartPoints }
+    : marketSummary;
   if (displayMarketSummary) {
     rememberQuote(displayMarketSummary.symbol, displayMarketSummary.price);
   }

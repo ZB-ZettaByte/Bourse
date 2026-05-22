@@ -112,24 +112,21 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
-
 @theme {
-  
   --color-gray-900: #050505;
   --color-gray-800: #141414;
   --color-gray-700: #212328;
-  --color-gray-600: #30333A;
-  --color-gray-500: #9095A1;
-  --color-gray-400: #CCDADC;
+  --color-gray-600: #30333a;
+  --color-gray-500: #9095a1;
+  --color-gray-400: #ccdadc;
 
-  
-  --color-blue-600: #5862FF;
-  --color-yellow-400: #FDD458;
-  --color-yellow-500: #E8BA40;
-  --color-teal-400: #0FEDBE;
-  --color-red-500: #FF495B;
-  --color-orange-500: #FF8243;
-  --color-purple-500: #D13BFF;
+  --color-blue-600: #5862ff;
+  --color-yellow-400: #fdd458;
+  --color-yellow-500: #e8ba40;
+  --color-teal-400: #0fedbe;
+  --color-red-500: #ff495b;
+  --color-orange-500: #ff8243;
+  --color-purple-500: #d13bff;
 }
 
 @layer base {
@@ -256,6 +253,56 @@
     }
   }
 
+  @keyframes hero-market-drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(-1.5rem, -0.75rem, 0);
+    }
+  }
+
+  @keyframes hero-market-line-flow {
+    0% {
+      stroke-dashoffset: 1200;
+      opacity: 0.04;
+    }
+    35%,
+    75% {
+      stroke-dashoffset: 0;
+      opacity: 0.34;
+    }
+    100% {
+      stroke-dashoffset: -1200;
+      opacity: 0.04;
+    }
+  }
+
+  @keyframes hero-ticker-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0.28;
+    }
+    50% {
+      transform: translate3d(0.75rem, -1.1rem, 0);
+      opacity: 0.54;
+    }
+  }
+
+  @keyframes hero-bar-float {
+    0%,
+    100% {
+      transform: translateY(0) scaleY(0.92);
+      opacity: 0.16;
+    }
+    50% {
+      transform: translateY(-1.2rem) scaleY(1.16);
+      opacity: 0.34;
+    }
+  }
+
   .market-chart-line {
     stroke-dasharray: 760;
     animation: market-chart-draw 5.5s ease-in-out infinite;
@@ -297,6 +344,203 @@
 
   .workflow-step:nth-child(3) {
     animation-delay: 0.7s;
+  }
+
+  .hero-market-backdrop {
+    animation: hero-market-drift 11s ease-in-out infinite;
+  }
+
+  .hero-market-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 96px 96px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 68%);
+    opacity: 0.45;
+  }
+
+  .hero-market-lines {
+    mask-image: radial-gradient(ellipse 42% 31% at 50% 53%, transparent 0%, transparent 58%, black 77%);
+  }
+
+  .hero-market-bars span {
+    position: absolute;
+    bottom: 12%;
+    width: 0.5rem;
+    height: 5.5rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(134, 239, 172, 0.72), rgba(34, 197, 94, 0.08));
+    box-shadow: 0 0 28px rgba(34, 197, 94, 0.2);
+    transform-origin: bottom;
+    animation: hero-bar-float 5.8s ease-in-out infinite;
+  }
+
+  .hero-market-bars span::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -1.45rem;
+    height: 1.35rem;
+    width: 2px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(187, 247, 208, 0.42);
+  }
+
+  .hero-market-bars span:nth-child(1) {
+    left: 5%;
+    bottom: 20%;
+    height: 4.6rem;
+    animation-delay: 0.1s;
+  }
+  .hero-market-bars span:nth-child(2) {
+    left: 11%;
+    bottom: 52%;
+    height: 7rem;
+    animation-delay: 1.5s;
+  }
+  .hero-market-bars span:nth-child(3) {
+    left: 17%;
+    bottom: 13%;
+    height: 5.8rem;
+    animation-delay: 2.1s;
+  }
+  .hero-market-bars span:nth-child(4) {
+    left: 24%;
+    bottom: 71%;
+    height: 4rem;
+    animation-delay: 0.7s;
+  }
+  .hero-market-bars span:nth-child(5) {
+    left: 31%;
+    bottom: 18%;
+    height: 7.8rem;
+    animation-delay: 2.8s;
+  }
+  .hero-market-bars span:nth-child(6) {
+    left: 39%;
+    bottom: 76%;
+    height: 5.2rem;
+    animation-delay: 1s;
+  }
+  .hero-market-bars span:nth-child(7) {
+    left: 47%;
+    bottom: 10%;
+    height: 4.8rem;
+    animation-delay: 3.3s;
+  }
+  .hero-market-bars span:nth-child(8) {
+    left: 56%;
+    bottom: 78%;
+    height: 6rem;
+    animation-delay: 1.9s;
+  }
+  .hero-market-bars span:nth-child(9) {
+    left: 64%;
+    bottom: 14%;
+    height: 7.2rem;
+    animation-delay: 0.4s;
+  }
+  .hero-market-bars span:nth-child(10) {
+    left: 72%;
+    bottom: 70%;
+    height: 4.8rem;
+    animation-delay: 2.5s;
+  }
+  .hero-market-bars span:nth-child(11) {
+    left: 80%;
+    bottom: 19%;
+    height: 6.6rem;
+    animation-delay: 1.3s;
+  }
+  .hero-market-bars span:nth-child(12) {
+    left: 88%;
+    bottom: 58%;
+    height: 5.2rem;
+    animation-delay: 3s;
+  }
+  .hero-market-bars span:nth-child(13) {
+    left: 94%;
+    bottom: 23%;
+    height: 7rem;
+    animation-delay: 0.9s;
+  }
+  .hero-market-bars span:nth-child(14) {
+    left: 2%;
+    bottom: 66%;
+    height: 5rem;
+    animation-delay: 3.5s;
+  }
+  .hero-market-bars span:nth-child(15) {
+    left: 97%;
+    bottom: 76%;
+    height: 4.4rem;
+    animation-delay: 1.7s;
+  }
+  .hero-market-bars span:nth-child(16) {
+    left: 34%;
+    bottom: 7%;
+    height: 4.2rem;
+    animation-delay: 2.2s;
+  }
+  .hero-market-bars span:nth-child(17) {
+    left: 69%;
+    bottom: 6%;
+    height: 4.4rem;
+    animation-delay: 0.2s;
+  }
+  .hero-market-bars span:nth-child(18) {
+    left: 15%;
+    bottom: 78%;
+    height: 5.4rem;
+    animation-delay: 2.9s;
+  }
+
+  .hero-market-line {
+    stroke-dasharray: 1200;
+    filter: drop-shadow(0 0 16px rgba(52, 211, 153, 0.32));
+    animation: hero-market-line-flow 8s ease-in-out infinite;
+    opacity: 0.38;
+  }
+
+  .hero-market-line-soft {
+    animation-delay: 1.2s;
+    opacity: 0.22;
+  }
+
+  .hero-market-line-low {
+    animation-delay: 2.1s;
+    opacity: 0.2;
+  }
+
+  .hero-ticker-chip {
+    position: absolute;
+    align-items: center;
+    gap: 0.55rem;
+    border: 1px solid rgba(167, 243, 208, 0.18);
+    border-radius: 999px;
+    background: rgba(6, 78, 59, 0.38);
+    padding: 0.55rem 0.8rem;
+    color: rgba(236, 253, 245, 0.76);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+    animation: hero-ticker-float 6.5s ease-in-out infinite;
+  }
+
+  .hero-ticker-chip strong {
+    color: #86efac;
+  }
+
+  .hero-ticker-chip-late {
+    animation-delay: 1.1s;
+  }
+
+  .hero-ticker-chip-slow {
+    animation-duration: 8s;
+    animation-delay: 0.45s;
   }
 
   .container {
@@ -381,7 +625,7 @@
     @apply !bg-gray-800 max-h-[400px];
   }
   .search-list-indicator {
-    @apply px-5 py-2
+    @apply px-5 py-2;
   }
   .search-list-empty {
     @apply py-6 !bg-transparent text-center text-gray-500;
@@ -414,7 +658,7 @@
     @apply bg-yellow-500 text-base hover:bg-yellow-500 text-gray-900 w-full rounded h-11 font-semibold cursor-pointer;
   }
   .watchlist-remove {
-    @apply bg-red-500! hover:bg-red-500! text-gray-900!
+    @apply bg-red-500! hover:bg-red-500! text-gray-900!;
   }
   .watchlist-empty-container {
     @apply container gap-8 flex-col items-center md:mt-10 p-6 text-center;
@@ -471,7 +715,7 @@
     @apply border-b cursor-pointer text-gray-100 border-gray-600 hover:bg-gray-700/50 transition-colors;
   }
   .table-cell {
-    @apply font-medium text-base
+    @apply font-medium text-base;
   }
   .add-alert {
     @apply flex text-sm items-center whitespace-nowrap gap-1.5 px-3 w-fit py-2 text-yellow-600 border border-yellow-600/20 rounded font-medium bg-transparent hover:bg-transparent cursor-pointer transition-colors;
@@ -535,7 +779,6 @@
   }
 }
 
-
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -544,7 +787,6 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
 
 .tradingview-widget-container {
   position: relative;
@@ -560,7 +802,6 @@
 .tradingview-widget-container__widget {
   background-color: #141414 !important;
   height: 100% !important;
-
 }
 
 .widget-stock-heatmap-container .screenerMapWrapper-BBVfGP0b {
@@ -608,11 +849,10 @@
 }
 
 .custom-chart.tradingview-widget-container iframe {
-  border: 1px solid #30333A;
+  border: 1px solid #30333a;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
-
 
 .scrollbar-hide-default {
   scrollbar-width: thin;
@@ -634,15 +874,15 @@
 }
 
 .scrollbar-hide-default:hover {
-  scrollbar-color: #30333A transparent;
+  scrollbar-color: #30333a transparent;
 }
 
 .scrollbar-hide-default:hover::-webkit-scrollbar-thumb {
-  background-color: #30333A;
+  background-color: #30333a;
 }
 
 .scrollbar-hide-default::-webkit-scrollbar-thumb:hover {
-  background-color: #9095A1;
+  background-color: #9095a1;
 }
 
 @keyframes fadeInUp {

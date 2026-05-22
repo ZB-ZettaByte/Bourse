@@ -41,7 +41,10 @@ export default function StockAbout({ profile, metrics = {}, dayLow, dayHigh }: S
           <Row label="1-day range" value={`${formatCurrency(dayLow)} - ${formatCurrency(dayHigh)}`} />
           <Row label="52-week range" value={`${formatCurrency(weekLow)} - ${formatCurrency(weekHigh)}`} />
           <Row label="Market cap" value={formatMarketCap(profile.marketCapitalization)} />
-          <Row label="P/E ratio" value={formatNumber(metrics.peBasicExclExtraTTM ?? metrics.peNormalizedAnnual)} />
+          <Row
+            label="P/E ratio"
+            value={formatNumber(metrics.peBasicExclExtraTTM ?? metrics.peNormalizedAnnual)}
+          />
           <Row label="Dividend yield" value={formatPercent(metrics.dividendYieldIndicatedAnnual)} />
         </div>
       </div>

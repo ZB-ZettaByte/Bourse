@@ -1,15 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Activity,
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart3,
-  LineChart,
-  Loader2,
-  Star,
-} from "lucide-react";
+import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, LineChart, Loader2, Star } from "lucide-react";
 import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 
 export type MarketStock = {
@@ -215,11 +207,15 @@ function buildChartPath(points: number[], width = 720, height = 220) {
     return [x, y] as const;
   });
 
-  return coordinates.map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
+  return coordinates
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ");
 }
 
 function buildMarketChart(series: ChartSeriesPoint[], previousClose?: number, width = 720, height = 250) {
-  const values = [...series.map((point) => point.price), previousClose].filter((point): point is number => Number.isFinite(point));
+  const values = [...series.map((point) => point.price), previousClose].filter((point): point is number =>
+    Number.isFinite(point)
+  );
 
   if (series.length < 2 || values.length < 2) return null;
 
@@ -237,7 +233,9 @@ function buildMarketChart(series: ChartSeriesPoint[], previousClose?: number, wi
     return { ...point, x, y };
   });
 
-  const path = coordinates.map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`).join(" ");
+  const path = coordinates
+    .map(({ x, y }, index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(" ");
   const last = coordinates[coordinates.length - 1];
   const first = coordinates[0];
   const previousY = previousClose ? height - ((previousClose - min) / range) * height : undefined;
@@ -267,7 +265,13 @@ function formatChartDate(point: ChartSeriesPoint | undefined, range: RangeOption
 
 function chartLabels(series: ChartSeriesPoint[], range: RangeOption) {
   if (series.length >= 4 && series.some((point) => point.time)) {
-    const indexes = [0, Math.floor((series.length - 1) * 0.25), Math.floor((series.length - 1) * 0.5), Math.floor((series.length - 1) * 0.75), series.length - 1];
+    const indexes = [
+      0,
+      Math.floor((series.length - 1) * 0.25),
+      Math.floor((series.length - 1) * 0.5),
+      Math.floor((series.length - 1) * 0.75),
+      series.length - 1,
+    ];
     return indexes.map((index) => formatChartDate(series[index], range)).filter(Boolean);
   }
 
@@ -294,7 +298,10 @@ export function LiveLineChart({
   summary: MarketStock;
   selectedRange: RangeOption;
 }) {
-  const chart = useMemo(() => buildMarketChart(series, previousClose ?? summary.previousClose), [series, previousClose, summary.previousClose]);
+  const chart = useMemo(
+    () => buildMarketChart(series, previousClose ?? summary.previousClose),
+    [series, previousClose, summary.previousClose]
+  );
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const labels = chartLabels(series, selectedRange);
 
@@ -354,11 +361,38 @@ export function LiveLineChart({
         )}
       </div>
 
-      <svg viewBox="0 0 720 250" className="absolute inset-y-0 left-14 right-0 h-full w-[calc(100%-3.5rem)]" aria-label="Market price trend">
+      <svg
+        viewBox="0 0 720 250"
+        className="absolute inset-y-0 left-14 right-0 h-full w-[calc(100%-3.5rem)]"
+        aria-label="Market price trend"
+      >
         <path d={`${chart.path} L720 250 L0 250 Z`} fill={`url(#${gradientId})`} />
-        <path d={chart.path} fill="none" stroke={chartColor} strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-        {isInspecting && <line x1={activePoint.x} x2={activePoint.x} y1="0" y2="250" stroke="rgba(0,0,0,0.35)" strokeDasharray="2 4" />}
-        <circle cx={activePoint.x} cy={activePoint.y} r="5" fill={chartColor} stroke="#ffffff" strokeWidth="3" />
+        <path
+          d={chart.path}
+          fill="none"
+          stroke={chartColor}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="3"
+        />
+        {isInspecting && (
+          <line
+            x1={activePoint.x}
+            x2={activePoint.x}
+            y1="0"
+            y2="250"
+            stroke="rgba(0,0,0,0.35)"
+            strokeDasharray="2 4"
+          />
+        )}
+        <circle
+          cx={activePoint.x}
+          cy={activePoint.y}
+          r="5"
+          fill={chartColor}
+          stroke="#ffffff"
+          strokeWidth="3"
+        />
         <defs>
           <linearGradient id="liveMarketFadeUp" x1="0" x2="0" y1="0" y2="1">
             <stop stopColor="#63b37f" stopOpacity="0.28" />
@@ -381,7 +415,9 @@ export function LiveLineChart({
           }}
         >
           <span>{numberFormatter.format(activePoint.price)} USD</span>
-          {activePoint.time && <span className="ml-1 text-white/65">{formatChartDate(activePoint, selectedRange)}</span>}
+          {activePoint.time && (
+            <span className="ml-1 text-white/65">{formatChartDate(activePoint, selectedRange)}</span>
+          )}
         </span>
       )}
 
@@ -404,17 +440,25 @@ export function LiveLineChart({
           }
           if (event.key === "ArrowRight") {
             event.preventDefault();
-            setHoverIndex((currentIndex) => Math.min(chart.coordinates.length - 1, (currentIndex ?? chart.coordinates.length - 1) + 1));
+            setHoverIndex((currentIndex) =>
+              Math.min(chart.coordinates.length - 1, (currentIndex ?? chart.coordinates.length - 1) + 1)
+            );
           }
         }}
       />
 
       <div className="absolute inset-x-14 bottom-0 flex justify-between text-sm font-medium text-black/50">
-        {labels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}
+        {labels.map((label, index) => (
+          <span key={`${label}-${index}`}>{label}</span>
+        ))}
       </div>
 
       <span className="absolute bottom-7 left-14 rounded-md border border-black/10 bg-white/85 px-2 py-1 text-[10px] font-bold text-black/45 backdrop-blur-sm">
-        {source === "candles" || source === "yahoo-chart" ? "Live market chart" : source === "live-history" ? "Live quote history" : "Live quote range"}
+        {source === "candles" || source === "yahoo-chart"
+          ? "Live market chart"
+          : source === "live-history"
+            ? "Live quote history"
+            : "Live quote range"}
       </span>
     </div>
   );
@@ -429,14 +473,24 @@ function MiniChart({ points, isUp }: { points: number[]; isUp: boolean }) {
 
   return (
     <svg viewBox="0 0 120 36" className="h-7 w-20" aria-hidden>
-      <path d={path} fill="none" stroke={isUp ? "#0f9f8c" : "#ef4444"} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path
+        d={path}
+        fill="none"
+        stroke={isUp ? "#0f9f8c" : "#ef4444"}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
     </svg>
   );
 }
 
 function LoadingState() {
   return (
-    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 pb-12 pt-14 text-green-900 md:px-8 md:pb-14 md:pt-16">
+    <section
+      id="live-stats"
+      className="border-t border-green-900/10 bg-green-100 px-5 pb-12 pt-14 text-green-900 md:px-8 md:pb-14 md:pt-16"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 flex items-center gap-3">
           <Loader2 className="size-5 animate-spin text-teal-700" />
@@ -461,7 +515,10 @@ function LoadingState() {
 
 function StateCard({ title, message, action }: { title: string; message: string; action?: string }) {
   return (
-    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20">
+    <section
+      id="live-stats"
+      className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20"
+    >
       <div className="mx-auto max-w-7xl rounded-lg border border-black/10 bg-white p-10 text-center shadow-sm">
         <BarChart3 className="mx-auto size-10 text-black/35" />
         <h2 className="mt-4 text-2xl font-semibold">{title}</h2>
@@ -496,13 +553,17 @@ function StockRow({
       <StockAvatar stock={stock} />
       <div className="min-w-0">
         <p className="truncate text-xs font-bold">{stock.name}</p>
-        <span className="rounded-sm bg-black/5 px-1.5 py-0.5 text-[10px] font-bold text-black/45">{stock.symbol}</span>
+        <span className="rounded-sm bg-black/5 px-1.5 py-0.5 text-[10px] font-bold text-black/45">
+          {stock.symbol}
+        </span>
       </div>
       <div className="flex items-center gap-3 text-right">
         {showMiniChart && <MiniChart points={stock.chartPoints} isUp={isUp} />}
         <div>
-        <p className="text-xs font-medium">{formatCurrency(stock.price)}</p>
-        <p className={`text-xs font-bold ${isUp ? "text-teal-700" : "text-red-500"}`}>{formatPercent(stock.changePercent)}</p>
+          <p className="text-xs font-medium">{formatCurrency(stock.price)}</p>
+          <p className={`text-xs font-bold ${isUp ? "text-teal-700" : "text-red-500"}`}>
+            {formatPercent(stock.changePercent)}
+          </p>
         </div>
       </div>
     </button>
@@ -514,6 +575,7 @@ function StockAvatar({ stock }: { stock: MarketStock }) {
 
   if (stock.logo && !hasLogoError) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- Stock logos come from external provider URLs.
       <img
         src={stock.logo}
         alt={`${stock.name} logo`}
@@ -548,7 +610,9 @@ function MoversCard({
   return (
     <article className="rounded-lg border border-black/10 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-2">
-        <span className={`grid size-7 place-items-center rounded-full text-white ${variant === "down" ? "bg-red-500" : "bg-black"}`}>
+        <span
+          className={`grid size-7 place-items-center rounded-full text-white ${variant === "down" ? "bg-red-500" : "bg-black"}`}
+        >
           <Icon className="size-4" />
         </span>
         <h3 className="text-sm font-bold">{title}</h3>
@@ -564,7 +628,9 @@ function MoversCard({
             />
           ))
         ) : (
-          <p className="rounded-md border border-dashed border-black/10 p-5 text-sm text-black/45">No stocks returned for this group.</p>
+          <p className="rounded-md border border-dashed border-black/10 p-5 text-sm text-black/45">
+            No stocks returned for this group.
+          </p>
         )}
       </div>
     </article>
@@ -598,7 +664,11 @@ function MarketHeadline({ summary }: { summary: MarketStock }) {
   );
 }
 
-export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany?: (stock: MarketSummarySelection) => void }) {
+export default function MarketSummaryLive({
+  onSelectCompany,
+}: {
+  onSelectCompany?: (stock: MarketSummarySelection) => void;
+}) {
   const [data, setData] = useState<MarketSummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -635,13 +705,19 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
 
               const baseSeries = payload.chartSeries?.length
                 ? payload.chartSeries
-                : (payload.chartPoints?.length ? payload.chartPoints : payload.marketSummary?.chartPoints ?? []).map((price, index, prices) => ({
+                : (payload.chartPoints?.length
+                    ? payload.chartPoints
+                    : (payload.marketSummary?.chartPoints ?? [])
+                  ).map((price, index, prices) => ({
                     price,
                     time: Math.floor(Date.now() / 1000) - (prices.length - index - 1) * 15 * 60,
                   }));
               const nextSamples =
                 currentSamples.length > 0
-                  ? [...currentSamples, { price: payload.marketSummary?.price ?? 0, time: Math.floor(Date.now() / 1000) }]
+                  ? [
+                      ...currentSamples,
+                      { price: payload.marketSummary?.price ?? 0, time: Math.floor(Date.now() / 1000) },
+                    ]
                   : baseSeries;
               return nextSamples.slice(-MAX_LIVE_SAMPLES);
             });
@@ -690,7 +766,9 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
   }
 
   const summary = data.marketSummary;
-  const updatedAt = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
+  const updatedAt = data.updatedAt
+    ? new Date(data.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : null;
   const chartSeries =
     selectedRange === "1D" && liveSamples.length >= 2
       ? liveSamples
@@ -727,7 +805,10 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
   }
 
   return (
-    <section id="live-stats" className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20">
+    <section
+      id="live-stats"
+      className="border-t border-green-900/10 bg-green-100 px-5 py-16 text-green-900 md:px-8 md:py-20"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="mb-7 flex flex-col justify-between gap-3 md:flex-row md:items-end">
           <div>
@@ -788,25 +869,36 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
                     ["Prev close", displaySummary.previousClose],
                     ["Change", displaySummary.change],
                     ["Change %", displaySummary.changePercent],
-                    ["Range", displaySummary.high && displaySummary.low ? displaySummary.high - displaySummary.low : undefined],
+                    [
+                      "Range",
+                      displaySummary.high && displaySummary.low
+                        ? displaySummary.high - displaySummary.low
+                        : undefined,
+                    ],
                   ].map(([label, value]) => (
                     <div key={label}>
                       <p className="font-bold text-black/50">{label}</p>
                       <p className="mt-1 font-semibold text-black">
-                        {typeof value === "number"
-                          ? label === "Change %"
-                            ? <AnimatedValue value={value} formatter={formatPercent} />
-                            : label === "Range"
-                              ? numberFormatter.format(value)
-                              : <AnimatedValue value={value} formatter={formatCurrency} />
-                          : "N/A"}
+                        {typeof value === "number" ? (
+                          label === "Change %" ? (
+                            <AnimatedValue value={value} formatter={formatPercent} />
+                          ) : label === "Range" ? (
+                            numberFormatter.format(value)
+                          ) : (
+                            <AnimatedValue value={value} formatter={formatCurrency} />
+                          )
+                        ) : (
+                          "N/A"
+                        )}
                       </p>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="grid h-[312px] place-items-center text-center text-black/45">No market summary symbol returned.</div>
+              <div className="grid h-[312px] place-items-center text-center text-black/45">
+                No market summary symbol returned.
+              </div>
             )}
           </article>
 
@@ -824,18 +916,35 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
                   />
                 ))
               ) : (
-                <p className="rounded-md border border-dashed border-black/10 p-5 text-sm text-black/45">No index proxy quotes returned.</p>
+                <p className="rounded-md border border-dashed border-black/10 p-5 text-sm text-black/45">
+                  No index proxy quotes returned.
+                </p>
               )}
             </div>
-            <Link href="#features" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-600">
+            <Link
+              href="#features"
+              className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-600"
+            >
               Build your own watchlist
             </Link>
           </article>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <MoversCard title="Top gaining stocks" stocks={data.topGainers} variant="up" selectedSymbol={activeSymbol} onSelectStock={handleSelectStock} />
-          <MoversCard title="Trending stocks" stocks={data.trendingStocks} variant="trend" selectedSymbol={activeSymbol} onSelectStock={handleSelectStock} />
+          <MoversCard
+            title="Top gaining stocks"
+            stocks={data.topGainers}
+            variant="up"
+            selectedSymbol={activeSymbol}
+            onSelectStock={handleSelectStock}
+          />
+          <MoversCard
+            title="Trending stocks"
+            stocks={data.trendingStocks}
+            variant="trend"
+            selectedSymbol={activeSymbol}
+            onSelectStock={handleSelectStock}
+          />
         </div>
 
         <article className="mt-4 rounded-lg border border-black/10 bg-white p-4 shadow-sm">
@@ -857,7 +966,8 @@ export default function MarketSummaryLive({ onSelectCompany }: { onSelectCompany
               ))
             ) : (
               <p className="rounded-md border border-dashed border-black/10 p-5 text-sm text-black/45">
-                No preview stocks returned. Once the backend exposes user watchlists publicly, this slot can connect to it.
+                No preview stocks returned. Once the backend exposes user watchlists publicly, this slot can
+                connect to it.
               </p>
             )}
           </div>

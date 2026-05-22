@@ -11,7 +11,12 @@ type SearchMatch = {
   logo?: string;
 };
 
-export default function SemanticStockSearch({ className = "" }: { className?: string }) {
+type SemanticStockSearchProps = {
+  className?: string;
+  surface?: "dark" | "light";
+};
+
+export default function SemanticStockSearch({ className = "", surface = "dark" }: SemanticStockSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<SearchMatch[]>([]);
@@ -19,6 +24,7 @@ export default function SemanticStockSearch({ className = "" }: { className?: st
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const showDropdown = isFocused && (query.trim().length > 0 || matches.length > 0);
+  const isLight = surface === "light";
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -78,7 +84,13 @@ export default function SemanticStockSearch({ className = "" }: { className?: st
 
   return (
     <div className={`relative w-full transition-all duration-300 ${className}`}>
-      <div className="flex h-11 items-center gap-3 rounded-full border border-green-500/30 bg-white/5 px-4 text-white/80 transition-colors focus-within:border-green-500/60 focus-within:bg-white/10">
+      <div
+        className={`flex h-11 items-center gap-3 rounded-full border border-green-500/30 px-4 transition-colors focus-within:border-green-500/60 ${
+          isLight
+            ? "bg-white/45 text-green-950/80 focus-within:bg-white/70"
+            : "bg-white/5 text-white/80 focus-within:bg-white/10"
+        }`}
+      >
         <Search className="size-4 shrink-0 text-teal-300" />
         <input
           value={query}
@@ -87,9 +99,15 @@ export default function SemanticStockSearch({ className = "" }: { className?: st
           onBlur={() => window.setTimeout(() => setIsFocused(false), 140)}
           onKeyDown={handleKeyDown}
           placeholder="Search stocks naturally"
-          className="h-full min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/40"
+          className={`h-full min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none ${
+            isLight ? "text-green-950 placeholder:text-green-950/45" : "text-white placeholder:text-white/40"
+          }`}
         />
-        {isLoading && <Loader2 className="size-4 shrink-0 animate-spin text-white/45" />}
+        {isLoading && (
+          <Loader2
+            className={`size-4 shrink-0 animate-spin ${isLight ? "text-green-950/45" : "text-white/45"}`}
+          />
+        )}
       </div>
 
       {showDropdown && (
@@ -105,9 +123,13 @@ export default function SemanticStockSearch({ className = "" }: { className?: st
                     className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/10"
                   >
                     <SearchResultLogo match={match} />
-                    <span className="shrink-0 text-sm font-bold text-emerald-300">{match.ticker.toUpperCase()}</span>
+                    <span className="shrink-0 text-sm font-bold text-emerald-300">
+                      {match.ticker.toUpperCase()}
+                    </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-white/75">{match.companyName || match.ticker}</span>
+                      <span className="block truncate text-sm font-semibold text-white/75">
+                        {match.companyName || match.ticker}
+                      </span>
                     </span>
                   </button>
                 </li>

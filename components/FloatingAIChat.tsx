@@ -1,8 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { Send, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Line, LineChart as RechartsLineChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -18,6 +28,7 @@ type ComparisonStock = {
   price: number;
   change: number;
   candles: number[];
+  times?: number[];
 };
 
 type ChatPayload = {
@@ -80,7 +91,10 @@ export default function FloatingAIChat() {
         setMessages([...nextMessages, { role: "assistant", content: reply, isTyping: true }]);
       }
     } catch {
-      setMessages([...nextMessages, { role: "assistant", content: "Bourse AI is unavailable right now.", isTyping: true }]);
+      setMessages([
+        ...nextMessages,
+        { role: "assistant", content: "Bourse AI is unavailable right now.", isTyping: true },
+      ]);
     } finally {
       setIsSending(false);
       window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -100,7 +114,7 @@ export default function FloatingAIChat() {
         aria-label="Open Bourse AI chat"
         className="fixed bottom-6 right-6 z-50 grid size-14 place-items-center rounded-full bg-[#22c55e] text-black shadow-2xl shadow-black/35 transition hover:scale-105 hover:bg-[#2ee66f] focus:outline-none focus:ring-2 focus:ring-[#22c55e]/60 focus:ring-offset-2 focus:ring-offset-black"
       >
-        <img src={bourseIconSrc} alt="Bourse AI" className="size-9 rounded-full" />
+        <Image src={bourseIconSrc} alt="Bourse AI" width={36} height={36} className="size-9 rounded-full" />
       </button>
 
       <section
@@ -113,7 +127,13 @@ export default function FloatingAIChat() {
         <header className="flex items-center justify-between border-b border-white/10 px-4 py-3.5">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/35">
-              <img src={bourseIconSrc} alt="Bourse AI" className="size-9 rounded-full" />
+              <Image
+                src={bourseIconSrc}
+                alt="Bourse AI"
+                width={36}
+                height={36}
+                className="size-9 rounded-full"
+              />
             </span>
             <div>
               <h2 className="text-sm font-bold leading-none">Bourse AI</h2>
@@ -139,9 +159,6 @@ export default function FloatingAIChat() {
               <div className="flex items-start gap-3">
                 <AIAvatar />
                 <p className="max-w-[82%] rounded-[4px_18px_18px_18px] border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3 text-sm leading-6 text-white/75">
-                  <span className="mb-2 grid size-6 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/30">
-                    <img src={bourseIconSrc} alt="Bourse AI" className="size-5 rounded-full" />
-                  </span>
                   Hi, I&apos;m Bourse AI. Ask me about markets, metrics, or stock trends.
                 </p>
               </div>
@@ -217,7 +234,7 @@ export default function FloatingAIChat() {
 function AIAvatar() {
   return (
     <span className="grid size-8 shrink-0 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/35">
-      <img src={bourseIconSrc} alt="Bourse AI" className="size-7 rounded-full" />
+      <Image src={bourseIconSrc} alt="Bourse AI" width={28} height={28} className="size-7 rounded-full" />
     </span>
   );
 }
@@ -233,9 +250,6 @@ function ChatBubble({ message, onDone }: { message: ChatMessage; onDone: () => v
 
   return (
     <div className="max-w-[82%] whitespace-pre-wrap rounded-[4px_18px_18px_18px] border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3 text-sm leading-6 text-white/75">
-      <span className="mb-2 grid size-6 place-items-center rounded-full bg-green-900 p-0.5 ring-1 ring-emerald-300/30">
-        <img src={bourseIconSrc} alt="Bourse AI" className="size-5 rounded-full" />
-      </span>
       {message.type === "comparison" && message.stocks?.length === 2 ? (
         <ComparisonMessage text={message.text ?? message.content} stocks={message.stocks} />
       ) : (
@@ -247,29 +261,115 @@ function ChatBubble({ message, onDone }: { message: ChatMessage; onDone: () => v
 
 function ComparisonMessage({ text, stocks }: { text: string; stocks: ComparisonStock[] }) {
   const [left, right] = stocks;
-  const chartData = left.candles.map((value, index) => ({
+  const hasCandleData = left.candles.length >= 4 && right.candles.length >= 4;
+  const pointCount = Math.max(left.candles.length, right.candles.length);
+  const chartData = Array.from({ length: pointCount }).map((_, index) => ({
     i: index,
-    [left.ticker]: value,
-    [right.ticker]: right.candles[index] ?? null,
+    time: comparisonTimeLabel(
+      interpolatedTimestamp(left.times, index, pointCount) ??
+        interpolatedTimestamp(right.times, index, pointCount)
+    ),
+    [left.ticker]: priceAt(left.candles, index, pointCount),
+    [right.ticker]: priceAt(right.candles, index, pointCount),
   }));
+  const leftColor = "#22c55e";
+  const rightColor = "#60a5fa";
 
   return (
     <div className="space-y-3">
       <p>{text}</p>
-      <p className="text-xs font-bold text-white/40">
-        {left.ticker} vs {right.ticker} — Today
-      </p>
-      <div className="h-40 w-full rounded-lg border border-white/10 bg-black/25 p-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={chartData}>
-            <Tooltip
-              contentStyle={{ background: "#111", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff" }}
-              labelStyle={{ color: "rgba(255,255,255,0.55)" }}
-            />
-            <Line type="monotone" dataKey={left.ticker} stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey={right.ticker} stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />
-          </RechartsLineChart>
-        </ResponsiveContainer>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-bold text-white/40">
+          {left.ticker} vs {right.ticker} — Today
+        </p>
+        <div className="flex items-center gap-3 text-[11px] font-bold text-white/45">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-[#22c55e]" />
+            {left.ticker}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-[#60a5fa]" />
+            {right.ticker}
+          </span>
+        </div>
+      </div>
+      <div className="h-52 w-full overflow-hidden rounded-lg border border-white/10 bg-black/30 p-2 shadow-inner shadow-black/30">
+        {hasCandleData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ left: 0, right: 6, top: 10, bottom: 6 }}>
+              <defs>
+                <linearGradient id={`comparisonFill-${left.ticker}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={leftColor} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={leftColor} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id={`comparisonFill-${right.ticker}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor={rightColor} stopOpacity={0.24} />
+                  <stop offset="100%" stopColor={rightColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis
+                dataKey="i"
+                axisLine={false}
+                tickLine={false}
+                ticks={[0, 18, 39, 60, 78].filter((tick) => tick < pointCount)}
+                tickFormatter={(value) => chartData[Number(value)]?.time ?? ""}
+                minTickGap={18}
+                tick={{ fill: "rgba(255,255,255,0.38)", fontSize: 10, fontWeight: 700 }}
+              />
+              <YAxis yAxisId="left" hide domain={["dataMin", "dataMax"]} />
+              <YAxis yAxisId="right" hide orientation="right" domain={["dataMin", "dataMax"]} />
+              <ReferenceLine
+                yAxisId="left"
+                y={left.candles[0] ?? left.price}
+                stroke="rgba(34,197,94,0.24)"
+                strokeDasharray="4 4"
+              />
+              <ReferenceLine
+                yAxisId="right"
+                y={right.candles[0] ?? right.price}
+                stroke="rgba(96,165,250,0.22)"
+                strokeDasharray="4 4"
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "#111",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 8,
+                  color: "#fff",
+                }}
+                labelStyle={{ color: "rgba(255,255,255,0.55)" }}
+                formatter={(value, name) => [`$${Number(value).toFixed(2)}`, name]}
+              />
+              <Area
+                type="monotone"
+                dataKey={left.ticker}
+                yAxisId="left"
+                stroke={leftColor}
+                strokeWidth={3}
+                fill={`url(#comparisonFill-${left.ticker})`}
+                dot={false}
+                activeDot={{ r: 4, fill: leftColor, stroke: "#111", strokeWidth: 2 }}
+                isAnimationActive={false}
+              />
+              <Area
+                type="monotone"
+                dataKey={right.ticker}
+                yAxisId="right"
+                stroke={rightColor}
+                strokeWidth={3}
+                fill={`url(#comparisonFill-${right.ticker})`}
+                dot={false}
+                activeDot={{ r: 4, fill: rightColor, stroke: "#111", strokeWidth: 2 }}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="grid h-full place-items-center px-5 text-center text-xs font-semibold leading-5 text-white/45">
+            Real 5-minute candle data is unavailable for this comparison right now.
+          </div>
+        )}
       </div>
       <div className="flex gap-3">
         {stocks.map((stock) => {
@@ -288,6 +388,33 @@ function ComparisonMessage({ text, stocks }: { text: string; stocks: ComparisonS
       </div>
     </div>
   );
+}
+
+function priceAt(candles: number[], index: number, pointCount: number) {
+  const valid = candles.filter((value) => Number.isFinite(value) && value > 0);
+  if (valid.length === 0) return 0;
+  const first = valid[0];
+  if (valid.length === 1 || pointCount <= 1) return first;
+  const position = (index / (pointCount - 1)) * (valid.length - 1);
+  const lower = Math.floor(position);
+  const upper = Math.min(valid.length - 1, Math.ceil(position));
+  const ratio = position - lower;
+  return valid[lower] + (valid[upper] - valid[lower]) * ratio;
+}
+
+function interpolatedTimestamp(times: number[] | undefined, index: number, pointCount: number) {
+  const valid = times?.filter((value) => Number.isFinite(value) && value > 0) ?? [];
+  if (valid.length >= pointCount) return valid[index];
+  return undefined;
+}
+
+function comparisonTimeLabel(timestamp: number | undefined) {
+  if (typeof timestamp === "number" && Number.isFinite(timestamp)) {
+    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(
+      new Date(timestamp * 1000)
+    );
+  }
+  return "";
 }
 
 function FormattedMessage({
@@ -345,7 +472,11 @@ function formatInlineMarkdown(line: string) {
 
   return parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={`${part}-${index}`} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+      return (
+        <strong key={`${part}-${index}`} className="font-bold text-white">
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
 
     return <span key={`${part}-${index}`}>{part}</span>;

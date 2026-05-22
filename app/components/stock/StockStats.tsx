@@ -11,7 +11,16 @@ type StockStatsProps = {
   volume?: number;
 };
 
-export default function StockStats({ open, high, low, current, previousClose, change, changePercent, volume }: StockStatsProps) {
+export default function StockStats({
+  open,
+  high,
+  low,
+  current,
+  previousClose,
+  change,
+  changePercent,
+  volume,
+}: StockStatsProps) {
   const stats = [
     ["Open", formatCurrency(open)],
     ["High", formatCurrency(high)],

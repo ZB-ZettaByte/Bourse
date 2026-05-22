@@ -58,7 +58,17 @@ export type StockFinancials = {
   employeesFY?: number;
   revenuePerEmployee?: number;
   netIncomePerEmployee?: number;
-  dataNotes?: Partial<Record<"revenueFY" | "netIncomeFY" | "sharesFloat" | "employeesFY" | "revenuePerEmployee" | "netIncomePerEmployee", string>>;
+  dataNotes?: Partial<
+    Record<
+      | "revenueFY"
+      | "netIncomeFY"
+      | "sharesFloat"
+      | "employeesFY"
+      | "revenuePerEmployee"
+      | "netIncomePerEmployee",
+      string
+    >
+  >;
 };
 
 type StockExecutive = {
@@ -103,11 +113,16 @@ type YahooNewsResponse = {
   }>;
 };
 
-type YahooValue = {
-  raw?: number;
-  fmt?: string;
-  longFmt?: string;
-} | number | string | null | undefined;
+type YahooValue =
+  | {
+      raw?: number;
+      fmt?: string;
+      longFmt?: string;
+    }
+  | number
+  | string
+  | null
+  | undefined;
 
 type TradingViewMetricsResponse = {
   total_revenue_fy?: number | null;
@@ -209,7 +224,15 @@ type FinnhubCandles = {
 };
 
 async function getPerformance(symbol: string, current?: number): Promise<StockPerformance[]> {
-  const labels: StockPerformancePeriod[] = ["1 day", "5 days", "1 month", "6 months", "Year to date", "1 year", "5 years"];
+  const labels: StockPerformancePeriod[] = [
+    "1 day",
+    "5 days",
+    "1 month",
+    "6 months",
+    "Year to date",
+    "1 year",
+    "5 years",
+  ];
   const to = Math.floor(Date.now() / 1000);
 
   const rows = await Promise.all(
@@ -219,7 +242,9 @@ async function getPerformance(symbol: string, current?: number): Promise<StockPe
           `/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=D&from=${unixSeconds(performanceStart(label))}&to=${to}`,
           300
         );
-        const closes = Array.isArray(candles.c) ? candles.c.filter((value) => Number.isFinite(Number(value)) && Number(value) > 0) : [];
+        const closes = Array.isArray(candles.c)
+          ? candles.c.filter((value) => Number.isFinite(Number(value)) && Number(value) > 0)
+          : [];
         const first = closes[0];
         const last = current ?? closes[closes.length - 1];
         const changePercent = first && last ? ((last - first) / first) * 100 : undefined;
@@ -236,9 +261,9 @@ async function getPerformance(symbol: string, current?: number): Promise<StockPe
 function decodeHtml(value: string) {
   return value
     .replace(/\\u002F/g, "/")
-    .replace(/\\"/g, "\"")
+    .replace(/\\"/g, '"')
     .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, "\"")
+    .replace(/&quot;/g, '"')
     .replace(/&#x27;/g, "'")
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ")
@@ -258,7 +283,8 @@ function yahooRaw(value: YahooValue) {
     const numeric = Number(value.replace(/,/g, ""));
     return Number.isFinite(numeric) ? numeric : undefined;
   }
-  if (value && typeof value === "object" && typeof value.raw === "number" && Number.isFinite(value.raw)) return value.raw;
+  if (value && typeof value === "object" && typeof value.raw === "number" && Number.isFinite(value.raw))
+    return value.raw;
   return undefined;
 }
 
@@ -266,7 +292,12 @@ function firstFinite(...values: Array<number | undefined>) {
   return values.find((value) => typeof value === "number" && Number.isFinite(value));
 }
 
-function withNote(notes: StockFinancials["dataNotes"], key: keyof NonNullable<StockFinancials["dataNotes"]>, found: boolean, source: string) {
+function withNote(
+  notes: StockFinancials["dataNotes"],
+  key: keyof NonNullable<StockFinancials["dataNotes"]>,
+  found: boolean,
+  source: string
+) {
   if (found) return;
   notes[key] = `Could not find ${source}.`;
 }
@@ -277,7 +308,13 @@ function metricFrom(metrics: Record<string, number>, keys: string[]) {
 
 function primaryTradingViewExchange(profile: StockProfile) {
   const exchange = `${profile.exchange ?? ""}`.toUpperCase();
-  if (exchange.includes("NASDAQ") || exchange.includes("NMS") || exchange.includes("NCM") || exchange.includes("NGM")) return "NASDAQ";
+  if (
+    exchange.includes("NASDAQ") ||
+    exchange.includes("NMS") ||
+    exchange.includes("NCM") ||
+    exchange.includes("NGM")
+  )
+    return "NASDAQ";
   if (exchange.includes("NYSE") || exchange.includes("NEW YORK STOCK EXCHANGE")) return "NYSE";
   if (exchange.includes("AMEX")) return "AMEX";
   return "NASDAQ";
@@ -382,7 +419,9 @@ async function getWikidataCeo(symbol: string, profile: StockProfile) {
       query?: { search?: Array<{ title?: string }> };
     };
     const title = searchPayload.query?.search?.find((item) => item.title)?.title;
-    return (title ? await getWikidataCeoFromTitle(title) : undefined) ?? (await getWikidataCeoFromTitle(symbol));
+    return (
+      (title ? await getWikidataCeoFromTitle(title) : undefined) ?? (await getWikidataCeoFromTitle(symbol))
+    );
   } catch {
     return undefined;
   }
@@ -397,14 +436,17 @@ async function getYahooProfile(symbol: string) {
       "incomeStatementHistory",
       "price",
     ].join(",");
-    const response = await fetch(`${YAHOO_QUOTE_SUMMARY_BASE_URL}/${encodeURIComponent(symbol)}?modules=${modules}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 Bourse stock profile enrichment",
-        Accept: "application/json",
-      },
-      signal: AbortSignal.timeout(3500),
-      next: { revalidate: 86400 },
-    });
+    const response = await fetch(
+      `${YAHOO_QUOTE_SUMMARY_BASE_URL}/${encodeURIComponent(symbol)}?modules=${modules}`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 Bourse stock profile enrichment",
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(3500),
+        next: { revalidate: 86400 },
+      }
+    );
 
     if (!response.ok) return undefined;
 
@@ -417,7 +459,9 @@ async function getYahooProfile(symbol: string) {
 
 async function getExternalDescription(symbol: string, profile: StockProfile) {
   const yahooProfile = await getYahooProfile(symbol);
-  const yahooDescription = yahooProfile?.assetProfile?.longBusinessSummary ? cleanDescription(yahooProfile.assetProfile.longBusinessSummary) : "";
+  const yahooDescription = yahooProfile?.assetProfile?.longBusinessSummary
+    ? cleanDescription(yahooProfile.assetProfile.longBusinessSummary)
+    : "";
   if (yahooDescription) return yahooDescription;
 
   for (const exchange of tradingViewExchangeCandidates(profile)) {
@@ -466,7 +510,10 @@ async function getCeo(symbol: string, profile: StockProfile) {
   });
   if (yahooCeo?.name) return yahooCeo.name;
 
-  const executives = await fetchFinnhub<StockExecutiveResponse>(`/stock/executive?symbol=${encodeURIComponent(symbol)}`, 86400).catch(() => ({ executive: [] }));
+  const executives = await fetchFinnhub<StockExecutiveResponse>(
+    `/stock/executive?symbol=${encodeURIComponent(symbol)}`,
+    86400
+  ).catch(() => ({ executive: [] }));
   const ceo = executives.executive?.find((person) => {
     const title = `${person.position ?? person.title ?? ""}`.toLowerCase();
     return title.includes("chief executive officer") || /\bceo\b/.test(title);
@@ -518,7 +565,11 @@ async function getTradingViewFinancials(symbol: string, profile: StockProfile) {
   return {};
 }
 
-async function getFinancialFallbacks(symbol: string, profile: StockProfile, metrics: Record<string, number>): Promise<StockFinancials> {
+async function getFinancialFallbacks(
+  symbol: string,
+  profile: StockProfile,
+  metrics: Record<string, number>
+): Promise<StockFinancials> {
   const [yahooProfile, tradingViewFinancials] = await Promise.all([
     getYahooProfile(symbol).catch(() => undefined),
     getTradingViewFinancials(symbol, profile).catch(() => ({})),
@@ -552,12 +603,37 @@ async function getFinancialFallbacks(symbol: string, profile: StockProfile, metr
   const revenuePerEmployee = employeesFY && revenueFY ? revenueFY / employeesFY : undefined;
   const netIncomePerEmployee = employeesFY && netIncomeFY ? netIncomeFY / employeesFY : undefined;
 
-  withNote(notes, "revenueFY", revenueFY !== undefined, "annual revenue from Finnhub, Yahoo Finance, or TradingView");
-  withNote(notes, "netIncomeFY", netIncomeFY !== undefined, "annual net income from Finnhub, Yahoo Finance, or TradingView");
-  withNote(notes, "sharesFloat", sharesFloat !== undefined, "shares float from Finnhub, Yahoo Finance, or TradingView");
-  withNote(notes, "employeesFY", employeesFY !== undefined, "employee count from Finnhub, Yahoo Finance, or TradingView");
+  withNote(
+    notes,
+    "revenueFY",
+    revenueFY !== undefined,
+    "annual revenue from Finnhub, Yahoo Finance, or TradingView"
+  );
+  withNote(
+    notes,
+    "netIncomeFY",
+    netIncomeFY !== undefined,
+    "annual net income from Finnhub, Yahoo Finance, or TradingView"
+  );
+  withNote(
+    notes,
+    "sharesFloat",
+    sharesFloat !== undefined,
+    "shares float from Finnhub, Yahoo Finance, or TradingView"
+  );
+  withNote(
+    notes,
+    "employeesFY",
+    employeesFY !== undefined,
+    "employee count from Finnhub, Yahoo Finance, or TradingView"
+  );
   withNote(notes, "revenuePerEmployee", revenuePerEmployee !== undefined, "revenue per employee inputs");
-  withNote(notes, "netIncomePerEmployee", netIncomePerEmployee !== undefined, "net income per employee inputs");
+  withNote(
+    notes,
+    "netIncomePerEmployee",
+    netIncomePerEmployee !== undefined,
+    "net income per employee inputs"
+  );
 
   return {
     revenueFY,
@@ -616,10 +692,16 @@ function newsRelevance(article: StockNewsArticle, symbol: string, companyName?: 
   const cleanSymbol = symbol.toLowerCase();
   const companyTokens = normalizedTitle(companyName)
     .split(" ")
-    .filter((token) => token.length > 2 && !["inc", "corp", "corporation", "company", "com", "class"].includes(token));
+    .filter(
+      (token) =>
+        token.length > 2 && !["inc", "corp", "corporation", "company", "com", "class"].includes(token)
+    );
   const mentionsSymbol = new RegExp(`\\b${cleanSymbol}\\b`, "i").test(text);
   const tokenHits = companyTokens.filter((token) => text.includes(token)).length;
-  const trustedSource = /yahoo|reuters|bloomberg|marketwatch|benzinga|investor|seeking|zacks|cnbc|barron|motley|fool|globenewswire|businesswire/.test(source);
+  const trustedSource =
+    /yahoo|reuters|bloomberg|marketwatch|benzinga|investor|seeking|zacks|cnbc|barron|motley|fool|globenewswire|businesswire/.test(
+      source
+    );
   const ageHours = article.datetime ? Math.max(0, Date.now() / 1000 - article.datetime) / 3600 : 240;
   const recency = Math.max(0, 24 - Math.min(ageHours, 24));
 
@@ -638,50 +720,84 @@ function mergeNews(symbol: string, companyName: string | undefined, ...groups: S
     const relevanceScore = newsRelevance(article, symbol, companyName);
     if (!canonicalTitle) byTitle.set(titleKey, key);
     const existing = byUrl.get(key);
-    if (!existing || relevanceScore > Number(existing.relevanceScore ?? 0) || Number(article.datetime ?? 0) > Number(existing.datetime ?? 0)) {
+    if (
+      !existing ||
+      relevanceScore > Number(existing.relevanceScore ?? 0) ||
+      Number(article.datetime ?? 0) > Number(existing.datetime ?? 0)
+    ) {
       byUrl.set(key, { ...article, relevanceScore });
     }
   }
 
   const ranked = [...byUrl.values()].sort(
-    (a, b) => Number(b.relevanceScore ?? 0) - Number(a.relevanceScore ?? 0) || Number(b.datetime ?? 0) - Number(a.datetime ?? 0)
+    (a, b) =>
+      Number(b.relevanceScore ?? 0) - Number(a.relevanceScore ?? 0) ||
+      Number(b.datetime ?? 0) - Number(a.datetime ?? 0)
   );
   const relevant = ranked.filter((article) => Number(article.relevanceScore ?? 0) >= 2);
   return relevant.length >= 8 ? relevant : ranked;
 }
 
 export async function getStockNews(symbolValue: string) {
-  const symbol = symbolValue.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = symbolValue
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
   const to = isoDate(0);
   const from = isoDate(30);
-  const profile = await fetchFinnhub<StockProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => ({}));
+  const profile = await fetchFinnhub<StockProfile>(
+    `/stock/profile2?symbol=${encodeURIComponent(symbol)}`,
+    3600
+  ).catch(() => ({}));
   const [finnhubNews, yahooNews] = await Promise.all([
-    fetchFinnhub<StockNewsArticle[]>(`/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`, 300).catch(() => []),
+    fetchFinnhub<StockNewsArticle[]>(
+      `/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
+      300
+    ).catch(() => []),
     getYahooNews(symbol, profile.name).catch(() => []),
   ]);
 
-  return mergeNews(symbol, profile.name, yahooNews, Array.isArray(finnhubNews) ? finnhubNews : []).slice(0, 20);
+  return mergeNews(symbol, profile.name, yahooNews, Array.isArray(finnhubNews) ? finnhubNews : []).slice(
+    0,
+    20
+  );
 }
 
 export async function getStockFinancials(symbolValue: string) {
-  const symbol = symbolValue.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = symbolValue
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
   const [profile, metrics] = await Promise.all([
-    fetchFinnhub<StockProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => ({ ticker: symbol })),
-    fetchFinnhub<StockMetrics>(`/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all`, 3600).catch(() => ({ metric: {} })),
+    fetchFinnhub<StockProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => ({
+      ticker: symbol,
+    })),
+    fetchFinnhub<StockMetrics>(`/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all`, 3600).catch(
+      () => ({ metric: {} })
+    ),
   ]);
   return getFinancialFallbacks(symbol, profile, metrics.metric ?? {});
 }
 
 export async function getStockDetail(symbolValue: string): Promise<StockDetailData> {
-  const symbol = symbolValue.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = symbolValue
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
   const to = isoDate(0);
   const from = isoDate(30);
 
   const [quote, profile, metrics, earnings, news] = await Promise.all([
     fetchFinnhub<StockQuote>(`/quote?symbol=${encodeURIComponent(symbol)}`, 30).catch(() => ({})),
-    fetchFinnhub<StockProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => ({ ticker: symbol })),
-    fetchFinnhub<StockMetrics>(`/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all`, 3600).catch(() => ({ metric: {} })),
-    fetchFinnhub<StockEarnings[]>(`/stock/earnings?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => []),
+    fetchFinnhub<StockProfile>(`/stock/profile2?symbol=${encodeURIComponent(symbol)}`, 3600).catch(() => ({
+      ticker: symbol,
+    })),
+    fetchFinnhub<StockMetrics>(`/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all`, 3600).catch(
+      () => ({ metric: {} })
+    ),
+    fetchFinnhub<StockEarnings[]>(`/stock/earnings?symbol=${encodeURIComponent(symbol)}`, 3600).catch(
+      () => []
+    ),
     fetchFinnhub<StockNewsArticle[]>(
       `/company-news?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${to}`,
       300
@@ -696,7 +812,12 @@ export async function getStockDetail(symbolValue: string): Promise<StockDetailDa
     getYahooNews(symbol, profile.name).catch(() => []),
     getFinancialFallbacks(symbol, profile, metricPayload).catch(() => ({ dataNotes: {} })),
   ]);
-  const enrichedProfile = { ...profile, ...(ceo ? { ceo } : {}), ...(description ? { description } : {}), ...(financials.employeesFY ? { employeeTotal: financials.employeesFY } : {}) };
+  const enrichedProfile = {
+    ...profile,
+    ...(ceo ? { ceo } : {}),
+    ...(description ? { description } : {}),
+    ...(financials.employeesFY ? { employeeTotal: financials.employeesFY } : {}),
+  };
   const finnhubNews = Array.isArray(news) ? news : [];
 
   return {
@@ -705,7 +826,9 @@ export async function getStockDetail(symbolValue: string): Promise<StockDetailDa
     profile: enrichedProfile,
     metrics: metricPayload,
     financials,
-    earnings: (Array.isArray(earnings) ? earnings : []).sort((a, b) => String(b.period ?? "").localeCompare(String(a.period ?? ""))),
+    earnings: (Array.isArray(earnings) ? earnings : []).sort((a, b) =>
+      String(b.period ?? "").localeCompare(String(a.period ?? ""))
+    ),
     performance,
     news: mergeNews(symbol, profile.name, yahooNews, finnhubNews).slice(0, 20),
   };

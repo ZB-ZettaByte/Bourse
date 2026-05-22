@@ -9,7 +9,10 @@ type FinancialsRouteProps = {
 
 export async function GET(_request: Request, { params }: FinancialsRouteProps) {
   const { ticker } = await params;
-  const symbol = ticker.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const symbol = ticker
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
 
   if (!symbol) {
     return NextResponse.json({ financials: {}, error: "Ticker is required." }, { status: 400 });

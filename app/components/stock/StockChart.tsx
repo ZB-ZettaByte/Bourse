@@ -2,7 +2,12 @@
 
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { LiveLineChart, type ChartSeriesPoint, type MarketStock, type RangeOption } from "@/components/MarketSummaryLive";
+import {
+  LiveLineChart,
+  type ChartSeriesPoint,
+  type MarketStock,
+  type RangeOption,
+} from "@/components/MarketSummaryLive";
 
 const RANGES: RangeOption[] = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y"];
 
@@ -14,7 +19,13 @@ type MarketSummaryResponse = {
   error?: string;
 };
 
-export default function StockChart({ symbol, initialSummary }: { symbol: string; initialSummary: MarketStock }) {
+export default function StockChart({
+  symbol,
+  initialSummary,
+}: {
+  symbol: string;
+  initialSummary: MarketStock;
+}) {
   const [range, setRange] = useState<RangeOption>("1D");
   const [data, setData] = useState<MarketSummaryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,9 +36,12 @@ export default function StockChart({ symbol, initialSummary }: { symbol: string;
     async function loadChart() {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/market-summary?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}&t=${Date.now()}`, {
-          cache: "no-store",
-        });
+        const response = await fetch(
+          `/api/market-summary?symbol=${encodeURIComponent(symbol)}&range=${encodeURIComponent(range)}&t=${Date.now()}`,
+          {
+            cache: "no-store",
+          }
+        );
         const payload = (await response.json()) as MarketSummaryResponse;
         if (isMounted) setData(payload);
       } finally {
@@ -58,7 +72,9 @@ export default function StockChart({ symbol, initialSummary }: { symbol: string;
               type="button"
               onClick={() => setRange(option)}
               className={`border-b-2 pb-2 text-sm font-bold transition-colors ${
-                range === option ? "border-emerald-300 text-white" : "border-transparent text-white/45 hover:text-white"
+                range === option
+                  ? "border-emerald-300 text-white"
+                  : "border-transparent text-white/45 hover:text-white"
               }`}
             >
               {option}

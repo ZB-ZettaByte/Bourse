@@ -30,7 +30,9 @@ export default function StockNews({ articles }: { articles: StockNewsArticle[] }
             </a>
           ))
         ) : (
-          <p className="py-5 text-sm font-semibold text-white/45">No recent company news returned by Finnhub.</p>
+          <p className="py-5 text-sm font-semibold text-white/45">
+            No recent company news returned by Finnhub.
+          </p>
         )}
       </div>
     </section>

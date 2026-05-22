@@ -2,15 +2,7 @@
 
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ReferenceLine,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import type { ReactNode } from "react";
 import AIInsights from "@/app/components/stock/AIInsights";
 import { formatCurrency, formatMarketCap, formatNumber, formatPercent } from "./formatters";
@@ -115,7 +107,11 @@ function formatTimeAgo(timestamp?: number) {
 
 function formatQuoteTime(timestamp?: number) {
   if (!timestamp) return "";
-  return new Date(timestamp * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  return new Date(timestamp * 1000).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function isMarketOpen() {
@@ -154,17 +150,22 @@ function DataCell({ label, value, note }: { label: string; value: string; note?:
   const unavailable = value === "N/A";
   return (
     <div className="min-h-16 py-2">
-      <p className="text-xs font-bold uppercase tracking-0 text-white/38">{label}</p>
-      <p className={`mt-3 text-lg font-semibold ${unavailable ? "text-white/55" : "text-white"}`} title={note}>
+      <p className="text-xs font-bold uppercase tracking-0 text-green-950/42">{label}</p>
+      <p
+        className={`mt-3 text-lg font-semibold ${unavailable ? "text-green-950/55" : "text-green-950"}`}
+        title={note}
+      >
         {value}
       </p>
-      {unavailable && note ? <p className="mt-2 text-[11px] font-semibold text-white/35">Data could not be found.</p> : null}
+      {unavailable && note ? (
+        <p className="mt-2 text-[11px] font-semibold text-green-950/40">Data could not be found.</p>
+      ) : null}
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="text-2xl font-semibold leading-tight text-white">{children}</h2>;
+  return <h2 className="text-2xl font-semibold leading-tight text-green-950">{children}</h2>;
 }
 
 function charSlotWidth(char: string) {
@@ -200,7 +201,10 @@ function AnimatedTickerValue({
 
     const previousNumeric = numericRef.current;
     const nextDirection =
-      typeof value === "number" && Number.isFinite(value) && typeof previousNumeric === "number" && Number.isFinite(previousNumeric)
+      typeof value === "number" &&
+      Number.isFinite(value) &&
+      typeof previousNumeric === "number" &&
+      Number.isFinite(previousNumeric)
         ? value > previousNumeric
           ? "up"
           : value < previousNumeric
@@ -231,7 +235,12 @@ function AnimatedTickerValue({
   const maxLength = Math.max(previousText.length, currentText.length);
   const previousChars = previousText.padEnd(maxLength, " ");
   const currentChars = currentText.padEnd(maxLength, " ");
-  const movementColor = colorChangedDigits && direction === "up" ? "text-emerald-300" : colorChangedDigits && direction === "down" ? "text-red-400" : "";
+  const movementColor =
+    colorChangedDigits && direction === "up"
+      ? "text-emerald-300"
+      : colorChangedDigits && direction === "down"
+        ? "text-red-400"
+        : "";
   const oldY = direction === "up" ? "-110%" : "110%";
   const newStartY = direction === "up" ? "110%" : "-110%";
 
@@ -248,23 +257,37 @@ function AnimatedTickerValue({
 
         if (!changed) {
           return (
-            <span key={`${currentChar}-${index}`} className="inline-block text-center" style={{ width, visibility: currentChar === " " ? "hidden" : "visible" }}>
+            <span
+              key={`${currentChar}-${index}`}
+              className="inline-block text-center"
+              style={{ width, visibility: currentChar === " " ? "hidden" : "visible" }}
+            >
               {currentChar === " " ? previousChar : currentChar}
             </span>
           );
         }
 
         return (
-          <span key={`${previousChar}-${currentChar}-${index}`} className="relative inline-grid overflow-hidden text-center" style={{ width, height: "1.12em" }}>
+          <span
+            key={`${previousChar}-${currentChar}-${index}`}
+            className="relative inline-grid overflow-hidden text-center"
+            style={{ width, height: "1.12em" }}
+          >
             <span
               className="col-start-1 row-start-1 transition-all duration-500 ease-out"
-              style={{ opacity: isSliding ? 0 : 1, transform: isSliding ? `translateY(${oldY})` : "translateY(0)" }}
+              style={{
+                opacity: isSliding ? 0 : 1,
+                transform: isSliding ? `translateY(${oldY})` : "translateY(0)",
+              }}
             >
               {previousChar === " " ? "\u00a0" : previousChar}
             </span>
             <span
               className="col-start-1 row-start-1 transition-all duration-500 ease-out"
-              style={{ opacity: isSliding ? 1 : 0, transform: isSliding ? "translateY(0)" : `translateY(${newStartY})` }}
+              style={{
+                opacity: isSliding ? 1 : 0,
+                transform: isSliding ? "translateY(0)" : `translateY(${newStartY})`,
+              }}
             >
               {currentChar === " " ? "\u00a0" : currentChar}
             </span>
@@ -275,7 +298,15 @@ function AnimatedTickerValue({
   );
 }
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value?: number | string }>; label?: string }) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border border-white/10 bg-black px-3 py-2 text-xs shadow-xl">
@@ -289,8 +320,10 @@ function chartLabel(point: ChartPoint, index: number, range: RangeOption) {
   if (!point.time) return `${index + 1}`;
   const date = new Date(point.time * 1000);
   if (range === "1D") return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  if (range === "5D") return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-  if (range === "1M" || range === "6M" || range === "YTD") return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  if (range === "5D")
+    return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  if (range === "1M" || range === "6M" || range === "YTD")
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
   return date.toLocaleDateString([], { month: "short", year: "numeric" });
 }
 
@@ -359,9 +392,13 @@ function StockPriceChart({
   }, []);
 
   const series = useMemo(() => {
-    const points: ChartPoint[] = chartData.length >= 2 ? chartData : fallbackPoints.map((price) => ({ price }));
+    const points: ChartPoint[] =
+      chartData.length >= 2 ? chartData : fallbackPoints.map((price) => ({ price }));
     const livePoints =
-      range === "1D" && summary.price && points.length > 0 && points[points.length - 1]?.price !== summary.price
+      range === "1D" &&
+      summary.price &&
+      points.length > 0 &&
+      points[points.length - 1]?.price !== summary.price
         ? [...points, { price: summary.price, time: Math.floor(Date.now() / 1000) }]
         : points;
     return livePoints.map((point, index) => ({
@@ -410,14 +447,18 @@ function StockPriceChart({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold text-white">{detail.profile.name ?? summary.name}</h3>
-            <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white/50">{detail.profile.exchange ?? summary.exchange}</span>
+            <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white/50">
+              {detail.profile.exchange ?? summary.exchange}
+            </span>
           </div>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <p className="h-[1.12em] text-3xl font-semibold leading-none text-white">
               <AnimatedTickerValue value={summary.price} formatter={formatNumber} minWidth="6.2ch" />
             </p>
             <span className="text-[10px] font-bold uppercase text-white/42">USD</span>
-            <span className={`text-sm font-bold ${summary.changePercent >= 0 ? "text-emerald-300" : "text-red-400"}`}>
+            <span
+              className={`text-sm font-bold ${summary.changePercent >= 0 ? "text-emerald-300" : "text-red-400"}`}
+            >
               <AnimatedTickerValue value={summary.changePercent} formatter={formatPercent} minWidth="6.6ch" />
             </span>
             <span className="text-xs font-semibold text-white/42">
@@ -432,7 +473,9 @@ function StockPriceChart({
               type="button"
               onClick={() => setRange(option)}
               className={`border-b-2 pb-2 text-sm font-bold transition-colors ${
-                range === option ? "border-emerald-300 text-emerald-300" : "border-transparent text-white/42 hover:text-white"
+                range === option
+                  ? "border-emerald-300 text-emerald-300"
+                  : "border-transparent text-white/42 hover:text-white"
               }`}
             >
               {option}
@@ -444,10 +487,15 @@ function StockPriceChart({
       <div className="relative mt-7 h-[318px]">
         {isLoading && <Loader2 className="absolute right-4 top-4 z-10 size-4 animate-spin text-white/45" />}
         <div ref={chartRef} className="h-full w-full min-w-0 overflow-hidden">
-          <AreaChart width={innerWidth} height={318} data={series} margin={{ top: 10, right: 8, left: 0, bottom: 4 }}>
+          <AreaChart
+            width={innerWidth}
+            height={318}
+            data={series}
+            margin={{ top: 10, right: 8, left: 0, bottom: 4 }}
+          >
             <defs>
               <linearGradient id="stockDetailArea" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor={stroke} stopOpacity={0.30} />
+                <stop offset="0%" stopColor={stroke} stopOpacity={0.3} />
                 <stop offset="100%" stopColor={stroke} stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -468,18 +516,36 @@ function StockPriceChart({
               tickFormatter={(value) => Math.round(Number(value)).toString()}
               width={72}
               ticks={yAxisTicks}
-              domain={yAxisTicks ? [yAxisTicks[0], yAxisTicks[yAxisTicks.length - 1]] : ["dataMin", "dataMax"]}
+              domain={
+                yAxisTicks ? [yAxisTicks[0], yAxisTicks[yAxisTicks.length - 1]] : ["dataMin", "dataMax"]
+              }
             />
             {chartPreviousClose ? (
               <ReferenceLine
                 y={chartPreviousClose}
                 stroke="rgba(255,255,255,0.30)"
                 strokeDasharray="2 4"
-                label={{ value: "Previous close", position: "right", fill: "rgba(255,255,255,0.52)", fontSize: 12 }}
+                label={{
+                  value: "Previous close",
+                  position: "right",
+                  fill: "rgba(255,255,255,0.52)",
+                  fontSize: 12,
+                }}
               />
             ) : null}
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.35)", strokeDasharray: "2 4" }} />
-            <Area type="monotone" dataKey="price" stroke={stroke} strokeWidth={3} fill="url(#stockDetailArea)" dot={false} activeDot={{ r: 5, stroke: "#000000", strokeWidth: 3 }} />
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ stroke: "rgba(255,255,255,0.35)", strokeDasharray: "2 4" }}
+            />
+            <Area
+              type="monotone"
+              dataKey="price"
+              stroke={stroke}
+              strokeWidth={3}
+              fill="url(#stockDetailArea)"
+              dot={false}
+              activeDot={{ r: 5, stroke: "#000000", strokeWidth: 3 }}
+            />
           </AreaChart>
         </div>
         <span className="absolute bottom-7 left-3 rounded-md border border-white/10 bg-black/80 px-2 py-1 text-[10px] font-bold text-white/45 backdrop-blur-sm">
@@ -492,7 +558,11 @@ function StockPriceChart({
           <div key={label}>
             <p className="text-xs font-bold text-white/45">{label}</p>
             <p className="mt-2 text-sm font-semibold text-white">
-              {label === "Current" ? <AnimatedTickerValue value={summary.price} formatter={formatCurrency} minWidth="6.8ch" /> : value}
+              {label === "Current" ? (
+                <AnimatedTickerValue value={summary.price} formatter={formatCurrency} minWidth="6.8ch" />
+              ) : (
+                value
+              )}
             </p>
           </div>
         ))}
@@ -503,11 +573,11 @@ function StockPriceChart({
 
 function EarningsBanner({ earnings }: { earnings?: StockEarnings }) {
   return (
-    <section className="rounded-lg border border-emerald-300/20 bg-[radial-gradient(circle_at_top_left,rgba(99,179,127,0.20),transparent_34%),rgba(255,255,255,0.045)] p-6 text-center shadow-sm shadow-black/20">
-      <p className="text-xs font-bold uppercase text-emerald-200/80">Key facts today</p>
-      <p className="mx-auto mt-3 max-w-3xl text-xl font-semibold leading-8 text-white">
-        Latest report: EPS {formatNumber(earnings?.actual)}, revenue {formatCompactCurrency(earnings?.revenueActual)}, report period{" "}
-        {formatPeriod(earnings)}.
+    <section className="rounded-lg border border-green-900/10 bg-white p-6 text-center shadow-sm shadow-black/10">
+      <p className="text-xs font-bold uppercase text-emerald-700">Key facts today</p>
+      <p className="mx-auto mt-3 max-w-3xl text-xl font-semibold leading-8 text-green-950">
+        Latest report: EPS {formatNumber(earnings?.actual)}, revenue{" "}
+        {formatCompactCurrency(earnings?.revenueActual)}, report period {formatPeriod(earnings)}.
       </p>
     </section>
   );
@@ -532,10 +602,26 @@ function KeyStats({ detail }: { detail: StockDetailData }) {
   const financials = detail.financials ?? {};
   const notes = financials.dataNotes ?? {};
   const rows = [
-    { label: "Market cap", value: formatMarketCap(detail.profile.marketCapitalization ?? metricValue(metrics, ["marketCapitalization"])) },
-    { label: "Dividend yield", value: formatPercent(metricValue(metrics, ["dividendYieldIndicatedAnnual", "dividendYield5Y"])) },
-    { label: "P/E ratio", value: formatNumber(metricValue(metrics, ["peBasicExclExtraTTM", "peNormalizedAnnual", "peTTM"])) },
-    { label: "Basic EPS", value: formatNumber(metricValue(metrics, ["epsBasicExclExtraItemsTTM", "epsBasicExclExtraItemsAnnual", "epsTTM"])) },
+    {
+      label: "Market cap",
+      value: formatMarketCap(
+        detail.profile.marketCapitalization ?? metricValue(metrics, ["marketCapitalization"])
+      ),
+    },
+    {
+      label: "Dividend yield",
+      value: formatPercent(metricValue(metrics, ["dividendYieldIndicatedAnnual", "dividendYield5Y"])),
+    },
+    {
+      label: "P/E ratio",
+      value: formatNumber(metricValue(metrics, ["peBasicExclExtraTTM", "peNormalizedAnnual", "peTTM"])),
+    },
+    {
+      label: "Basic EPS",
+      value: formatNumber(
+        metricValue(metrics, ["epsBasicExclExtraItemsTTM", "epsBasicExclExtraItemsAnnual", "epsTTM"])
+      ),
+    },
     { label: "Net income FY", value: formatCompactCurrency(financials.netIncomeFY), note: notes.netIncomeFY },
     { label: "Revenue FY", value: formatCompactCurrency(financials.revenueFY), note: notes.revenueFY },
     { label: "Shares float", value: formatCompactNumber(financials.sharesFloat), note: notes.sharesFloat },
@@ -562,9 +648,21 @@ function Employees({ detail }: { detail: StockDetailData }) {
     <section className="space-y-4">
       <SectionTitle>Employees</SectionTitle>
       <div className="grid gap-3 md:grid-cols-3">
-        <DataCell label="Employees FY" value={formatCompactNumber(financials.employeesFY)} note={notes.employeesFY} />
-        <DataCell label="Revenue per employee" value={formatCompactCurrency(financials.revenuePerEmployee)} note={notes.revenuePerEmployee} />
-        <DataCell label="Net income per employee" value={formatCompactCurrency(financials.netIncomePerEmployee)} note={notes.netIncomePerEmployee} />
+        <DataCell
+          label="Employees FY"
+          value={formatCompactNumber(financials.employeesFY)}
+          note={notes.employeesFY}
+        />
+        <DataCell
+          label="Revenue per employee"
+          value={formatCompactCurrency(financials.revenuePerEmployee)}
+          note={notes.revenuePerEmployee}
+        />
+        <DataCell
+          label="Net income per employee"
+          value={formatCompactCurrency(financials.netIncomePerEmployee)}
+          note={notes.netIncomePerEmployee}
+        />
       </div>
     </section>
   );
@@ -590,14 +688,26 @@ function AboutCompany({ detail }: { detail: StockDetailData }) {
         <DataCell label="Website" value={profile.weburl ?? "N/A"} />
       </div>
       <div className="grid gap-3 md:grid-cols-4">
-        <DataCell label="Headquarters" value={[profile.city, profile.country].filter(Boolean).join(", ") || "N/A"} />
-        <DataCell label="Founded" value={profile.ipo ? new Date(profile.ipo).getFullYear().toString() : "N/A"} />
+        <DataCell
+          label="Headquarters"
+          value={[profile.city, profile.country].filter(Boolean).join(", ") || "N/A"}
+        />
+        <DataCell
+          label="Founded"
+          value={profile.ipo ? new Date(profile.ipo).getFullYear().toString() : "N/A"}
+        />
         <DataCell label="IPO date" value={formatDate(profile.ipo)} />
       </div>
       <div className="max-w-4xl py-2">
-        <p className={`text-sm leading-7 text-white/58 ${canExpand && !expanded ? "line-clamp-3" : ""}`}>{description}</p>
+        <p className={`text-sm leading-7 text-green-950/65 ${canExpand && !expanded ? "line-clamp-3" : ""}`}>
+          {description}
+        </p>
         {canExpand ? (
-          <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-3 text-sm font-bold text-emerald-300">
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="mt-3 text-sm font-bold text-emerald-700"
+          >
             {expanded ? "Show less" : "Show more"}
           </button>
         ) : null}
@@ -623,7 +733,9 @@ function NewsGrid({ detail }: { detail: StockDetailData }) {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/stock/${encodeURIComponent(detail.symbol)}/news?t=${Date.now()}`, { cache: "no-store" });
+        const response = await fetch(`/api/stock/${encodeURIComponent(detail.symbol)}/news?t=${Date.now()}`, {
+          cache: "no-store",
+        });
         const payload = (await response.json()) as NewsPayload;
         if (!response.ok) throw new Error(payload.error ?? "Unable to load news.");
         if (isMounted && Array.isArray(payload.news)) setArticles(payload.news.slice(0, 15));
@@ -645,48 +757,63 @@ function NewsGrid({ detail }: { detail: StockDetailData }) {
     <section className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <SectionTitle>News</SectionTitle>
-        <div className="min-h-5 text-xs font-semibold text-white/38">
+        <div className="min-h-5 text-xs font-semibold text-green-950/45">
           {isLoading ? (
-            <span className="inline-flex items-center gap-2"><Loader2 className="size-3.5 animate-spin" /> Refreshing headlines</span>
+            <span className="inline-flex items-center gap-2">
+              <Loader2 className="size-3.5 animate-spin" /> Refreshing headlines
+            </span>
           ) : articles.length ? (
             <span>{articles.length} relevant stories</span>
           ) : null}
         </div>
       </div>
 
-      {error ? <p className="rounded-lg border border-red-400/20 bg-red-400/10 p-4 text-sm font-semibold text-red-200">{error}</p> : null}
+      {error ? (
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-700">
+          {error}
+        </p>
+      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {isLoading && articles.length === 0
-          ? Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="min-h-32 animate-pulse rounded-lg border border-white/10 bg-white/[0.035] p-4">
-                <div className="h-4 w-28 rounded bg-white/10" />
-                <div className="mt-5 h-4 w-full rounded bg-white/10" />
-                <div className="mt-3 h-4 w-4/5 rounded bg-white/10" />
-              </div>
-            ))
-          : articles.length > 0 ? (
+        {isLoading && articles.length === 0 ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="min-h-32 animate-pulse rounded-lg border border-green-900/10 bg-white p-4"
+            >
+              <div className="h-4 w-28 rounded bg-black/10" />
+              <div className="mt-5 h-4 w-full rounded bg-black/10" />
+              <div className="mt-3 h-4 w-4/5 rounded bg-black/10" />
+            </div>
+          ))
+        ) : articles.length > 0 ? (
           articles.map((article) => (
             <a
               key={`${article.id ?? article.url}-${article.datetime ?? ""}`}
               href={article.url ?? "#"}
               target="_blank"
               rel="noreferrer"
-              className="group block min-h-40 rounded-lg border border-white/10 bg-white/[0.025] p-4 transition-colors hover:border-emerald-300/40 hover:bg-emerald-300/[0.04]"
+              className="group block min-h-40 rounded-lg border border-green-900/10 bg-white p-4 shadow-sm shadow-black/5 transition-colors hover:border-emerald-500/40 hover:bg-emerald-50"
             >
-              <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-white/40">
-                <span className="grid size-4 place-items-center rounded-full bg-emerald-300/18 text-[8px] font-bold text-emerald-200">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-green-950/45">
+                <span className="grid size-4 place-items-center rounded-full bg-emerald-100 text-[8px] font-bold text-emerald-700">
                   {(article.source ?? "N").slice(0, 2).toUpperCase()}
                 </span>
-                <span className="truncate">{formatTimeAgo(article.datetime)} · {article.source ?? "Market news"}</span>
-                <ExternalLink className="size-3.5 shrink-0 text-white/28 transition-colors group-hover:text-emerald-300" />
+                <span className="truncate">
+                  {formatTimeAgo(article.datetime)} · {article.source ?? "Market news"}
+                </span>
+                <ExternalLink className="size-3.5 shrink-0 text-green-950/30 transition-colors group-hover:text-emerald-700" />
               </div>
-              <h3 className="text-sm font-semibold leading-6 text-white/88 transition-colors group-hover:text-emerald-200">{article.headline}</h3>
-              {article.summary ? <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/48">{article.summary}</p> : null}
+              <h3 className="text-sm font-semibold leading-6 text-green-950 transition-colors group-hover:text-emerald-800">
+                {article.headline}
+              </h3>
+              {article.summary ? (
+                <p className="mt-3 line-clamp-2 text-xs leading-5 text-green-950/55">{article.summary}</p>
+              ) : null}
             </a>
           ))
         ) : (
-          <p className="rounded-lg border border-dashed border-white/10 p-5 text-sm font-semibold text-white/45 sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5">
+          <p className="rounded-lg border border-dashed border-green-900/15 p-5 text-sm font-semibold text-green-950/55 sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5">
             No recent company news could be found from the available sources.
           </p>
         )}
@@ -707,7 +834,12 @@ function Overview({
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <StockPriceChart detail={detail} fallbackPoints={summary.chartPoints} summary={summary} onSummaryUpdate={onSummaryUpdate} />
+        <StockPriceChart
+          detail={detail}
+          fallbackPoints={summary.chartPoints}
+          summary={summary}
+          onSummaryUpdate={onSummaryUpdate}
+        />
         <EarningsBanner earnings={latestEarnings} />
       </section>
       <LatestEarnings earnings={latestEarnings} />
@@ -718,7 +850,13 @@ function Overview({
   );
 }
 
-export default function StockDetailView({ detail, current, change, changePercent, summary }: StockDetailViewProps) {
+export default function StockDetailView({
+  detail,
+  current,
+  change,
+  changePercent,
+  summary,
+}: StockDetailViewProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("Overview");
   const [liveSummary, setLiveSummary] = useState(summary);
   const updateLiveSummary = useCallback((nextSummary: StockDetailViewProps["summary"]) => {
@@ -752,7 +890,9 @@ export default function StockDetailView({ detail, current, change, changePercent
   const marketOpen = useMarketOpenStatus();
   const displayedPrice = liveSummary.price || current;
   const displayedChange = Number.isFinite(liveSummary.change) ? liveSummary.change : change;
-  const displayedChangePercent = Number.isFinite(liveSummary.changePercent) ? liveSummary.changePercent : changePercent;
+  const displayedChangePercent = Number.isFinite(liveSummary.changePercent)
+    ? liveSummary.changePercent
+    : changePercent;
   const isUp = Number(displayedChangePercent ?? displayedChange ?? 0) >= 0;
   const profile = detail.profile;
 
@@ -760,9 +900,12 @@ export default function StockDetailView({ detail, current, change, changePercent
     let isMounted = true;
 
     async function loadLatestQuote() {
-      const response = await fetch(`/api/market-summary?symbol=${encodeURIComponent(detail.symbol)}&range=1D&live=1&t=${Date.now()}`, {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `/api/market-summary?symbol=${encodeURIComponent(detail.symbol)}&range=1D&live=1&t=${Date.now()}`,
+        {
+          cache: "no-store",
+        }
+      );
       const payload = (await response.json()) as ChartResponse;
       if (isMounted && payload.marketSummary) setLiveSummary(payload.marketSummary);
     }
@@ -792,7 +935,9 @@ export default function StockDetailView({ detail, current, change, changePercent
         const message = JSON.parse(String(event.data)) as FinnhubTradeMessage;
         if (message.type !== "trade" || !Array.isArray(message.data)) return;
 
-        const latestTrade = [...message.data].reverse().find((trade) => trade.s === detail.symbol && Number.isFinite(Number(trade.p)));
+        const latestTrade = [...message.data]
+          .reverse()
+          .find((trade) => trade.s === detail.symbol && Number.isFinite(Number(trade.p)));
         if (latestTrade?.p) updateLivePrice(Number(latestTrade.p));
       } catch {
         // Ignore malformed websocket frames and keep the polling fallback alive.
@@ -816,48 +961,70 @@ export default function StockDetailView({ detail, current, change, changePercent
               <div className="flex min-w-0 items-center gap-5">
                 {profile.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element -- Finnhub returns arbitrary remote logo hosts.
-                  <img src={profile.logo} alt={`${profile.name ?? detail.symbol} logo`} className="size-20 rounded-full bg-white p-2 object-contain" />
+                  <img
+                    src={profile.logo}
+                    alt={`${profile.name ?? detail.symbol} logo`}
+                    className="size-20 rounded-full bg-white p-2 object-contain"
+                  />
                 ) : (
-                  <span className="grid size-20 place-items-center rounded-full bg-white/10 text-xl font-bold text-white">{detail.symbol.slice(0, 3)}</span>
+                  <span className="grid size-20 place-items-center rounded-full bg-green-950 text-xl font-bold text-white">
+                    {detail.symbol.slice(0, 3)}
+                  </span>
                 )}
                 <div className="min-w-0">
-                  <h1 className="max-w-[15ch] text-4xl font-semibold leading-[1.05] text-white md:max-w-[18ch] md:text-5xl lg:max-w-[19ch]">
+                  <h1 className="max-w-[15ch] text-4xl font-semibold leading-[1.05] text-green-950 md:max-w-[18ch] md:text-5xl lg:max-w-[19ch]">
                     {profile.name ?? detail.symbol}
                   </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-white/46">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-green-950/55">
                     <span>{detail.symbol}</span>
                     <span>·</span>
                     <span>{profile.exchange ?? liveSummary.exchange}</span>
-                    <span className={`ml-1 size-2 rounded-full ${marketOpen ? "bg-emerald-300" : "bg-red-400"}`} />
+                    <span
+                      className={`ml-1 size-2 rounded-full ${marketOpen ? "bg-emerald-300" : "bg-red-400"}`}
+                    />
                     <span>Market {marketOpen ? "open" : "closed"}</span>
                   </div>
                 </div>
               </div>
               <div className="flex min-w-0 flex-col items-start lg:items-end lg:justify-self-end lg:text-right">
-                <p className="min-h-[1.05em] whitespace-nowrap text-5xl font-semibold leading-none text-white tabular-nums">
+                <p className="min-h-[1.05em] whitespace-nowrap text-5xl font-semibold leading-none text-green-950 tabular-nums">
                   {formatCurrency(displayedPrice)}
                 </p>
-                <p className={`mt-3 flex min-h-[1.25em] justify-start gap-3 text-base font-bold lg:justify-end ${isUp ? "text-emerald-300" : "text-red-400"}`}>
+                <p
+                  className={`mt-3 flex min-h-[1.25em] justify-start gap-3 text-base font-bold lg:justify-end ${isUp ? "text-emerald-700" : "text-red-600"}`}
+                >
                   <AnimatedTickerValue
                     value={displayedChange}
-                    formatter={(nextValue) => `${nextValue && nextValue >= 0 ? "+" : ""}${formatNumber(nextValue)}`}
+                    formatter={(nextValue) =>
+                      `${nextValue && nextValue >= 0 ? "+" : ""}${formatNumber(nextValue)}`
+                    }
                     minWidth="5.4ch"
                   />
-                  <AnimatedTickerValue value={displayedChangePercent} formatter={formatPercent} minWidth="5.8ch" />
+                  <AnimatedTickerValue
+                    value={displayedChangePercent}
+                    formatter={formatPercent}
+                    minWidth="5.8ch"
+                  />
                 </p>
-                {liveSummary.updatedAt ? <p className="mt-2 text-xs font-semibold text-white/35">Updated {formatQuoteTime(liveSummary.updatedAt)}</p> : null}
+                {liveSummary.updatedAt ? (
+                  <p className="mt-2 text-xs font-semibold text-green-950/45">
+                    Updated {formatQuoteTime(liveSummary.updatedAt)}
+                  </p>
+                ) : null}
               </div>
             </div>
           </section>
 
-          <div className="mb-7 flex gap-7 overflow-x-auto border-b border-white/10">
+          <div className="mb-7 flex gap-7 overflow-x-auto border-b border-green-950/10">
             {TABS.map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={`shrink-0 border-b-2 pb-3 text-sm font-bold transition-colors ${
-                  activeTab === tab ? "border-emerald-300 text-white" : "border-transparent text-white/45 hover:text-white"
+                  activeTab === tab
+                    ? "border-emerald-500 text-green-950"
+                    : "border-transparent text-green-950/45 hover:text-green-950"
                 }`}
               >
                 {tab}
@@ -865,7 +1032,9 @@ export default function StockDetailView({ detail, current, change, changePercent
             ))}
           </div>
 
-          {activeTab === "Overview" && <Overview detail={detail} summary={liveSummary} onSummaryUpdate={updateLiveSummary} />}
+          {activeTab === "Overview" && (
+            <Overview detail={detail} summary={liveSummary} onSummaryUpdate={updateLiveSummary} />
+          )}
           {activeTab === "Financials" && (
             <div className="space-y-8">
               <LatestEarnings earnings={latestEarnings} />
@@ -875,7 +1044,12 @@ export default function StockDetailView({ detail, current, change, changePercent
           )}
           {activeTab === "Technicals" && (
             <section className="space-y-4">
-              <StockPriceChart detail={detail} fallbackPoints={liveSummary.chartPoints} summary={liveSummary} onSummaryUpdate={updateLiveSummary} />
+              <StockPriceChart
+                detail={detail}
+                fallbackPoints={liveSummary.chartPoints}
+                summary={liveSummary}
+                onSummaryUpdate={updateLiveSummary}
+              />
             </section>
           )}
           {activeTab === "Forecasts" && (

@@ -27,7 +27,10 @@ const logoCache = searchStore.__bourseSearchLogoCache ?? {};
 searchStore.__bourseSearchLogoCache = logoCache;
 
 function cleanSymbol(value: string) {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.-]/g, "");
 }
 
 async function getCompanyLogo(ticker: string) {
@@ -78,7 +81,9 @@ export async function GET(request: Request) {
       cache: "no-store",
     });
     const payload = await response.json();
-    const results = Array.isArray(payload.results) ? await withCompanyLogos(payload.results as SearchMatch[]) : [];
+    const results = Array.isArray(payload.results)
+      ? await withCompanyLogos(payload.results as SearchMatch[])
+      : [];
 
     return NextResponse.json({ ...payload, results }, { status: response.status });
   } catch {
