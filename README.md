@@ -11,23 +11,23 @@ Bourse is a personal stock research platform built for exploring companies, trac
 - **Financial News:** Access live company and market news using Finnhub APIs.
 - **Responsive UI:** Simple and responsive interface built for market research and stock analysis.
 
-## Screenshots
+<p align="center">
+  <img src="screenshots/hero-landing-page.png" width="100%" />
+</p>
 
 <div align="center">
 
-<img src="screenshots/hero-landing-page.png" width="90%" />
 <img src="screenshots/market-dashboard.png" width="49%" />
-
 <img src="screenshots/semantic-stock-search.png" width="49%" />
+
 <img src="screenshots/stock-overview-chart.png" width="49%" />
-
 <img src="screenshots/stock-financials.png" width="49%" />
+
 <img src="screenshots/stock-news-feed.png" width="49%" />
-
 <img src="screenshots/feature-workflow-section.png" width="49%" />
-<img src="screenshots/contact-page.png" width="49%" />
 
-<img src="screenshots/stock-page-footer.png" width="49%" />
+<img src="screenshots/contact-page.png" width="49%" />
+<img src="screenshots/research-platform-footer.png" width="49%" />
 
 </div>
 
