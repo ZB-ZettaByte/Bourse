@@ -1,25 +1,17 @@
-# Bourse
+# Bourse — AI Stock Research Platform
 
-Bourse is a personal stock research project. It combines live market data, semantic stock search, stock detail pages, company news, and AI-assisted market context in one focused web app.
+Bourse is a personal stock research platform built for exploring companies, tracking market trends, and analyzing U.S. stocks in a simple interface.
 
-## Overview
+## Features
 
-Bourse helps users search for stocks naturally, open a detailed stock research page, review market movers, and ask an AI assistant concise finance questions. The project is designed as a practical full-stack portfolio project rather than a commercial startup.
+- **Stock Search:** Search and discover U.S. stocks using semantic search and natural-language queries.
+- **Market Tracking:** Monitor live prices, trending stocks, and market activity in real time.
+- **Company Analysis:** View company details, charts, news, statistics, and AI-powered insights.
+- **AI Assistant:** Ask finance-related questions through an integrated AI assistant powered by Groq.
+- **Financial News:** Access live company and market news using Finnhub APIs.
+- **Responsive UI:** Simple and responsive interface built for market research and stock analysis.
 
-## Problem Statement
-
-Stock research often requires switching between many tools for quotes, charts, news, company profiles, and quick explanations. Bourse explores how these pieces can be combined into one cleaner workflow for learning, comparing, and monitoring stocks.
-
-## Key Features
-
-- Semantic stock search powered by a FastAPI backend and vector embeddings.
-- Live market summary with top gaining stocks, trending stocks, market proxies, and charts.
-- Stock detail pages with quote data, range charts, company profile, stats, news, and AI insights.
-- Floating Bourse AI chat assistant using Groq for finance explanations and live stock context.
-- Company logos from Finnhub where available, with graceful fallbacks.
-- Responsive dark/light interface built for stock research and portfolio context.
-
-## Tech Stack
+### Tech Stack
 
 - Frontend: Next.js, React, TypeScript, Tailwind CSS
 - Backend: FastAPI, Python
@@ -28,7 +20,7 @@ Stock research often requires switching between many tools for quotes, charts, n
 - Charts and UI: Recharts, Lucide React
 - Package Manager: pnpm
 
-## Screenshots
+### Screenshots
 
 Add screenshots here after deployment:
 
@@ -37,11 +29,11 @@ Add screenshots here after deployment:
 - Stock detail page
 - Bourse AI chat
 
-## Demo Video
+### Demo Video
 
 Add a demo video link here.
 
-## Getting Started
+### Getting Started
 
 Clone the repository:
 
@@ -91,11 +83,11 @@ Open:
 http://localhost:3000
 ```
 
-## Current Status
+### Current Status
 
 Bourse is a working personal project with live market data, semantic search, AI chat, stock detail pages, and a responsive UI. Some features, such as watchlists and production deployment polish, are still evolving.
 
-## Future Improvements
+### Future Improvements
 
 - Add persistent user watchlists.
 - Add authentication for saved portfolios.
@@ -104,10 +96,10 @@ Bourse is a working personal project with live market data, semantic search, AI 
 - Add richer screenshots and a walkthrough video.
 - Improve deployment setup for frontend and backend hosting.
 
-## Author
+### Author
 
 Sai Rithwik Kukunuri
 
-## License
+### License
 
 This project is available for personal learning and portfolio use. Add a formal license before using it in a public or commercial setting.
