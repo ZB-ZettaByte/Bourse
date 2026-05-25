@@ -1,6 +1,6 @@
 # Bourse — AI Stock Research Platform
 
-Bourse is a personal stock research platform built for exploring companies, tracking market trends, and analyzing U.S. stocks in a simple interface.
+Bourse is a personal stock research platform built for exploring companies, tracking market trends, and analyzing U.S. stocks in a simple interface. The platform brings together live market data, company information, financial news, and AI-assisted summaries into a single research workflow. It includes semantic stock search, market dashboards, company analysis pages, and an integrated AI assistant for finance-related questions.
 
 ## Features
 
@@ -31,95 +31,68 @@ Bourse is a personal stock research platform built for exploring companies, trac
 
 </div>
 
-### Tech Stack
+## Getting Started
 
-- Frontend: Next.js, React, TypeScript, Tailwind CSS
-- Backend: FastAPI, Python
-- AI and Search: Groq, sentence-transformers, FAISS
-- Market Data: Finnhub API
-- Charts and UI: Recharts, Lucide React
-- Package Manager: pnpm
+Bourse is a full-stack stock research platform with a Next.js frontend and a FastAPI backend.
 
-### Screenshots
+- The frontend handles the user interface and stock dashboard
+- The backend handles APIs, stock data, and AI responses
 
-Add screenshots here after deployment:
+### Local Development
 
-- Landing page
-- Market summary page
-- Stock detail page
-- Bourse AI chat
-
-### Demo Video
-
-Add a demo video link here.
-
-### Getting Started
-
-Clone the repository:
+1. Clone the repository
 
 ```bash
 git clone https://github.com/ZB-ZettaByte/Bourse.git
 cd Bourse
 ```
 
-Install frontend dependencies:
+2. Install frontend dependencies
 
 ```bash
 pnpm install
 ```
 
-Create a `.env` file:
+3. Create a `.env` file in the root directory
 
-```bash
+```env
 NEXT_PUBLIC_FINNHUB_API_KEY=your_finnhub_key
 FINNHUB_API_KEY=your_finnhub_key
 GROQ_API_KEY=your_groq_key
 GROQ_MODEL=openai/gpt-oss-20b
 ```
 
-Install backend dependencies:
+4. Create a Python virtual environment
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+```
+
+5. Install backend dependencies
+
+```bash
 pip install -r backend/requirements.txt
 ```
 
-Start the FastAPI backend:
+6. Start the backend server
 
 ```bash
 .venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-Start the Next.js app:
+7. Start the frontend
 
 ```bash
 pnpm run dev
 ```
 
-Open:
+8. Open the app
 
 ```bash
 http://localhost:3000
 ```
 
-### Current Status
-
-Bourse is a working personal project with live market data, semantic search, AI chat, stock detail pages, and a responsive UI. Some features, such as watchlists and production deployment polish, are still evolving.
-
-### Future Improvements
-
-- Add persistent user watchlists.
-- Add authentication for saved portfolios.
-- Improve stock comparison pages.
-- Add more financial statements and earnings data.
-- Add richer screenshots and a walkthrough video.
-- Improve deployment setup for frontend and backend hosting.
-
 ### Author
 
 Sai Rithwik Kukunuri
-
-### License
-
-This project is available for personal learning and portfolio use. Add a formal license before using it in a public or commercial setting.
