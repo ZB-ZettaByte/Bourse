@@ -15,7 +15,7 @@ Bourse is a personal stock research platform built for exploring companies, trac
 
 <div align="center">
 
-<img src="screenshots/hero-landing-page.png" width="49%" />
+<img src="screenshots/hero-landing-page.png" width="90%" />
 <img src="screenshots/market-dashboard.png" width="49%" />
 
 <img src="screenshots/semantic-stock-search.png" width="49%" />
@@ -27,7 +27,7 @@ Bourse is a personal stock research platform built for exploring companies, trac
 <img src="screenshots/feature-workflow-section.png" width="49%" />
 <img src="screenshots/contact-page.png" width="49%" />
 
-<img src="screenshots/stock-page-footer.png" width="90%" />
+<img src="screenshots/stock-page-footer.png" width="49%" />
 
 </div>
 
