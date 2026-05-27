@@ -1,6 +1,6 @@
 ## Bourse — AI Stock Research Platform
 
-Bourse is a stock research platform for exploring companies, tracking market trends, and analyzing U.S. stocks. It includes live market data, company analysis, financial news, and an integrated AI assistant.
+Bourse is a stock research web app with market data, company insights, financial news, and an AI assistant.
 
 <p align="center">
   <img src="screenshots/hero-landing-page.png" width="100%" />
