@@ -1,4 +1,4 @@
-# Bourse — AI Stock Research Platform
+## Bourse — AI Stock Research Platform
 
 Bourse is a stock research platform for exploring companies, tracking market trends, and analyzing U.S. stocks. It includes live market data, company analysis, financial news, and an integrated AI assistant.
 
@@ -22,7 +22,7 @@ Bourse is a stock research platform for exploring companies, tracking market tre
 
 </div>
 
-## Features
+### Features
 
 - **Stock Search:** Search and discover U.S. stocks using semantic search and natural-language queries.
 - **Market Tracking:** Monitor live prices, trending stocks, and market activity in real time.
@@ -31,7 +31,7 @@ Bourse is a stock research platform for exploring companies, tracking market tre
 - **Financial News:** Access live company and market news using Finnhub APIs.
 - **Responsive UI:** Simple and responsive interface built for market research and stock analysis.
 
-## Getting Started
+### Getting Started
 
 Bourse is a full-stack stock research platform with a Next.js frontend and a FastAPI backend.
 
