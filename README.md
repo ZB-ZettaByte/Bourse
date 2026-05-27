@@ -2,15 +2,6 @@
 
 Bourse is a stock research platform for exploring companies, tracking market trends, and analyzing U.S. stocks. It includes live market data, company analysis, financial news, and an integrated AI assistant.
 
-## Features
-
-- **Stock Search:** Search and discover U.S. stocks using semantic search and natural-language queries.
-- **Market Tracking:** Monitor live prices, trending stocks, and market activity in real time.
-- **Company Analysis:** View company details, charts, news, statistics, and AI-powered insights.
-- **AI Assistant:** Ask finance-related questions through an integrated AI assistant powered by Groq.
-- **Financial News:** Access live company and market news using Finnhub APIs.
-- **Responsive UI:** Simple and responsive interface built for market research and stock analysis.
-
 <p align="center">
   <img src="screenshots/hero-landing-page.png" width="100%" />
 </p>
@@ -30,6 +21,15 @@ Bourse is a stock research platform for exploring companies, tracking market tre
 <img src="screenshots/stock-page-footer.png" width="49%" />
 
 </div>
+
+## Features
+
+- **Stock Search:** Search and discover U.S. stocks using semantic search and natural-language queries.
+- **Market Tracking:** Monitor live prices, trending stocks, and market activity in real time.
+- **Company Analysis:** View company details, charts, news, statistics, and AI-powered insights.
+- **AI Assistant:** Ask finance-related questions through an integrated AI assistant powered by Groq.
+- **Financial News:** Access live company and market news using Finnhub APIs.
+- **Responsive UI:** Simple and responsive interface built for market research and stock analysis.
 
 ## Getting Started
 
